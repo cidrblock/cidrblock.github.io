@@ -3,7 +3,7 @@
 http://docs.ansible.com/ansible/playbooks_best_practices.html&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="ch"&gt;#! /bin/bash&lt;/span&gt;
 
-&lt;span class="c1"&gt;# make a directory for roles`&lt;/span&gt;
+&lt;span class="c1"&gt;# make a directory for roles&lt;/span&gt;
 mkdir roles
 
 &lt;span class="c1"&gt;# make a directory for group variables&lt;/span&gt;
