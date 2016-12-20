@@ -1,34 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom"><title>codethenetwork: cognizance - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2016-12-20T16:06:06-08:00</updated><entry><title>Keep a running change log in Ansible</title><link href="https://cidrblock.github.io/keep-a-running-change-log-in-ansible.html" rel="alternate"></link><published>2016-12-20T16:06:06-08:00</published><updated>2016-12-20T16:06:06-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2016-12-20:/keep-a-running-change-log-in-ansible.html</id><summary type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;
 &lt;p&gt;In group_vars/all, you'll need a new variable to store all the changes through the playbook run:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;# group_vars/all
-changes: []
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;# group_vars/all&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changes&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[]&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Then, as you make changes, append the changes to the change variable:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="x"&gt;- name: Remediate the device (&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;os&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;)&lt;/span&gt;
-&lt;span class="x"&gt;  ios_config:&lt;/span&gt;
-&lt;span class="x"&gt;    host: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;inventory_hostname&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
-&lt;span class="x"&gt;    authorize: yes&lt;/span&gt;
-&lt;span class="x"&gt;    timeout: 60&lt;/span&gt;
-&lt;span class="x"&gt;    lines: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;base_config&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;users_remove&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;enable_remove&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
-&lt;span class="x"&gt;  register: config_changes&lt;/span&gt;
-&lt;span class="x"&gt;  notify: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;os&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;_save_config&amp;#39;&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Remediate the device ({{ os }})&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ios_config&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;host&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;inventory_hostname&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;authorize&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;yes&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;timeout&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;60&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;lines&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;base_config&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;users_remove&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;enable_remove&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;register&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;config_changes&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;notify&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;os&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;_save_config&amp;#39;&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;
 
-&lt;span class="x"&gt;- name: Append changes to log (&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;os&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;)&lt;/span&gt;
-&lt;span class="x"&gt;  set_fact:&lt;/span&gt;
-&lt;span class="x"&gt;    changes: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;changes&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;*** ROLE: &amp;#39;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;role_path&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="nf"&gt;basename&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39; ***&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;config_changes&lt;/span&gt;&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;updates&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
-&lt;span class="x"&gt;  when: config_changes[&amp;#39;updates&amp;#39;] is defined&lt;/span&gt;
+&lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log ({{ os }})&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;set_fact&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;changes&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;changes&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;[&amp;#39;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;role_path|basename&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;#39;]&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;+&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;config_changes[&amp;#39;updates&amp;#39;]&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;when&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;config_changes[&amp;#39;updates&amp;#39;] is defined&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
 &lt;p&gt;Make a new role, called 'report' which can get run as the last role in the playbook:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="x"&gt;- name: Show config changes for device&lt;/span&gt;
-&lt;span class="x"&gt;debug: msg=&amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;changes&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
-&lt;span class="x"&gt;when: changes|length &amp;gt; 0&lt;/span&gt;
-&lt;span class="x"&gt;tags:&lt;/span&gt;
-&lt;span class="x"&gt;- report&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Show config changes for device&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;debug&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;msg=&amp;quot;{{ changes }}&amp;quot;&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;when&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;changes|length &amp;gt; 0&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;tags&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;report&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 

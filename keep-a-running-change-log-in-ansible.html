@@ -62,34 +62,34 @@
   <div class="content">
     <p>Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.</p>
 <p>In group_vars/all, you'll need a new variable to store all the changes through the playbook run:</p>
-<div class="highlight"><pre><span></span># group_vars/all
-changes: []
+<div class="highlight"><pre><span></span><span class="c1"># group_vars/all</span>
+<span class="l l-Scalar l-Scalar-Plain">changes</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[]</span>
 </pre></div>
 
 
 <p>Then, as you make changes, append the changes to the change variable:</p>
-<div class="highlight"><pre><span></span><span class="x">- name: Remediate the device (</span><span class="cp">{{</span> <span class="nv">os</span> <span class="cp">}}</span><span class="x">)</span>
-<span class="x">  ios_config:</span>
-<span class="x">    host: &quot;</span><span class="cp">{{</span> <span class="nv">inventory_hostname</span> <span class="cp">}}</span><span class="x">&quot;</span>
-<span class="x">    authorize: yes</span>
-<span class="x">    timeout: 60</span>
-<span class="x">    lines: &quot;</span><span class="cp">{{</span> <span class="nv">base_config</span> <span class="o">+</span> <span class="nv">users_remove</span> <span class="o">+</span> <span class="nv">enable_remove</span> <span class="cp">}}</span><span class="x">&quot;</span>
-<span class="x">  register: config_changes</span>
-<span class="x">  notify: &quot;</span><span class="cp">{{</span> <span class="nv">os</span> <span class="o">+</span> <span class="s1">&#39;_save_config&#39;</span> <span class="cp">}}</span><span class="x">&quot;</span>
+<div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Remediate the device ({{ os }})</span>
+  <span class="l l-Scalar l-Scalar-Plain">ios_config</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">host</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">inventory_hostname</span><span class="nv"> </span><span class="s">}}&quot;</span>
+    <span class="l l-Scalar l-Scalar-Plain">authorize</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">yes</span>
+    <span class="l l-Scalar l-Scalar-Plain">timeout</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">60</span>
+    <span class="l l-Scalar l-Scalar-Plain">lines</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">base_config</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">users_remove</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">enable_remove</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">register</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">config_changes</span>
+  <span class="l l-Scalar l-Scalar-Plain">notify</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">os</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">&#39;_save_config&#39;</span><span class="nv"> </span><span class="s">}}&quot;</span>
 
-<span class="x">- name: Append changes to log (</span><span class="cp">{{</span> <span class="nv">os</span> <span class="cp">}}</span><span class="x">)</span>
-<span class="x">  set_fact:</span>
-<span class="x">    changes: &quot;</span><span class="cp">{{</span> <span class="nv">changes</span> <span class="o">+</span> <span class="o">[</span><span class="s1">&#39;*** ROLE: &#39;</span> <span class="o">+</span> <span class="nv">role_path</span><span class="o">|</span><span class="nf">basename</span> <span class="o">+</span> <span class="s1">&#39; ***&#39;</span><span class="o">]</span> <span class="o">+</span> <span class="nv">config_changes</span><span class="o">[</span><span class="s1">&#39;updates&#39;</span><span class="o">]</span> <span class="cp">}}</span><span class="x">&quot;</span>
-<span class="x">  when: config_changes[&#39;updates&#39;] is defined</span>
+<span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log ({{ os }})</span>
+  <span class="l l-Scalar l-Scalar-Plain">set_fact</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">changes</span><span class="p p-Indicator">:</span> <span class="s">&quot;{{</span><span class="nv"> </span><span class="s">changes</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">[&#39;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">&#39;</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">role_path|basename</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">&#39;</span><span class="nv"> </span><span class="s">***&#39;]</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">config_changes[&#39;updates&#39;]</span><span class="nv"> </span><span class="s">}}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">when</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">config_changes[&#39;updates&#39;] is defined</span>
 </pre></div>
 
 
 <p>Make a new role, called 'report' which can get run as the last role in the playbook:</p>
-<div class="highlight"><pre><span></span><span class="x">- name: Show config changes for device</span>
-<span class="x">debug: msg=&quot;</span><span class="cp">{{</span> <span class="nv">changes</span> <span class="cp">}}</span><span class="x">&quot;</span>
-<span class="x">when: changes|length &gt; 0</span>
-<span class="x">tags:</span>
-<span class="x">- report</span>
+<div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Show config changes for device</span>
+  <span class="l l-Scalar l-Scalar-Plain">debug</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">msg=&quot;{{ changes }}&quot;</span>
+  <span class="l l-Scalar l-Scalar-Plain">when</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">changes|length &gt; 0</span>
+  <span class="l l-Scalar l-Scalar-Plain">tags</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">report</span>
 </pre></div>
 
 
