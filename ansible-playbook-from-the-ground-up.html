@@ -130,6 +130,50 @@ ansible-galaxy init --init-path<span class="o">=</span>roles --offline --verbose
 <span class="c1"># review what&#39;s built</span>
 tree
 </pre></div>
+
+
+<p>The result should look like this:</p>
+<div class="highlight"><pre><span></span>New Vault password:
+Confirm New Vault password:
+Encryption successful
+The value of environment variable ANSIBLE_VAULT_PASSWORD will be used to decrypt the vault.
+Using /Users/bthornto/github/ansible_network_getting_started/eos_example/ansible.cfg as config file
+- default was created successfully
+.
+├── ansible.cfg
+├── callback_plugins
+├── filter_plugins
+├── go.sh
+├── group_vars
+│   └── all
+│       ├── vars.yml
+│       └── vault.yml
+├── host_vars
+├── library
+├── log.txt
+├── roles
+│   └── default
+│       ├── README.md
+│       ├── defaults
+│       │   └── main.yml
+│       ├── files
+│       ├── handlers
+│       │   └── main.yml
+│       ├── meta
+│       │   └── main.yml
+│       ├── tasks
+│       │   └── main.yml
+│       ├── templates
+│       ├── tests
+│       │   ├── inventory
+│       │   └── test.yml
+│       └── vars
+│           └── main.yml
+├── site.yml
+└── vault_pass.py
+
+16 directories, 15 files
+</pre></div>
   </div>
 </article>
     </div>

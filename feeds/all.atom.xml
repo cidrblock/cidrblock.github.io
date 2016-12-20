@@ -62,6 +62,50 @@ ansible-galaxy init --init-path&lt;span class="o"&gt;=&lt;/span&gt;roles --offli
 
 &lt;span class="c1"&gt;# review what&amp;#39;s built&lt;/span&gt;
 tree
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The result should look like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;New Vault password:
+Confirm New Vault password:
+Encryption successful
+The value of environment variable ANSIBLE_VAULT_PASSWORD will be used to decrypt the vault.
+Using /Users/bthornto/github/ansible_network_getting_started/eos_example/ansible.cfg as config file
+- default was created successfully
+.
+├── ansible.cfg
+├── callback_plugins
+├── filter_plugins
+├── go.sh
+├── group_vars
+│   └── all
+│       ├── vars.yml
+│       └── vault.yml
+├── host_vars
+├── library
+├── log.txt
+├── roles
+│   └── default
+│       ├── README.md
+│       ├── defaults
+│       │   └── main.yml
+│       ├── files
+│       ├── handlers
+│       │   └── main.yml
+│       ├── meta
+│       │   └── main.yml
+│       ├── tasks
+│       │   └── main.yml
+│       ├── templates
+│       ├── tests
+│       │   ├── inventory
+│       │   └── test.yml
+│       └── vars
+│           └── main.yml
+├── site.yml
+└── vault_pass.py
+
+16 directories, 15 files
 &lt;/pre&gt;&lt;/div&gt;</content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Keep a running change log in Ansible</title><link href="https://cidrblock.github.io/keep-a-running-change-log-in-ansible.html" rel="alternate"></link><published>2016-12-20T16:06:06-08:00</published><updated>2016-12-20T16:06:06-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2016-12-20:/keep-a-running-change-log-in-ansible.html</id><summary type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;
 &lt;p&gt;In group_vars/all, you'll need a new variable to store all the changes through the playbook run:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;# group_vars/all&lt;/span&gt;
