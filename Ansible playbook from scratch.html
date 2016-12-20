@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/style.css">
 
 
-<meta name="description" content="Build an ansible playbook from scratch.">
+<meta name="description" content="Build an Ansible playbook from scratch.">
 </head>
 
 <body>
@@ -65,82 +65,69 @@
     </ul>
   </header>
   <div class="content">
-    <p>This is based on the the Ansible best practice directory layout.</p>
-<h1>install tree</h1>
-<p>apt-get install tree</p>
-<h1>make a directory for roles`</h1>
-<p>mkdir roles</p>
-<h1>make a directory for group variables</h1>
-<p>mkdir group_vars</p>
-<h1>make a directory for all</h1>
-<p>mkdir group_vars/all</p>
-<h1>add a vars file and add a variable to it</h1>
-<p>touch group_vars/all/vars.yml
-echo my_var: {{ vault_my_var }} &gt;&gt; group_vars/all/vars.yml</p>
-<h1>add a vault file, a vaiable and encrypt it</h1>
-<p>touch group_vars/all/vault.yml
-echo vault_my_var: 12345 &gt;&gt; group_vars/all/vault.yml
-ansible-vault encrypt group_vars/all/vault.yml</p>
-<h1>make a directory for host variables</h1>
-<p>mkdir host_vars</p>
-<h1>if any custom modules, put them here</h1>
-<p>mkdir library  </p>
-<h1>if any custom filter plugins, put them here</h1>
-<p>mkdir filter_plugins</p>
-<h1>callback directory</h1>
-<p>mkdir callback_plugins</p>
-<h1>make a root file</h1>
-<p>touch site.yml</p>
-<h1>add an ansible.cfg file</h1>
-<p>touch ansible.cfg  </p>
-<h1>add some basics to the ansible.cfg</h1>
-<p>cat &gt; ansible.cfg &lt;&lt;EOL
-[defaults]
-callback_plugins = ./callback_plugins
-filter_plugins = ./filter_plugins
-vault_password_file = vault_pass.py
-log_path = ./log.txt
-EOL</p>
-<h1>add the vault decryption script to get the vault password from an environment variables</h1>
-<p>cat &gt; vault_pass.py &lt;&lt;EOL
-!/usr/bin/python
-import os
-print os.environ.get('ANSIBLE_VAULT_PASSWORD')
-EOL</p>
-<p>echo The value of environment variable ANSIBLE_VAULT_PASSWORD will be used to decrypt the vault.</p>
-<h1>build a new role called default</h1>
-<p>ansible-galaxy init --init-path=roles --offline --verbose logger</p>
-<h1>review what's built</h1>
-<p>tree</p>
-<p>group_vars/
-host_vars/
-   hostname1              # if systems need specific variables, put them here
-   hostname2              # ""</p>
-<p>library/                  # if any custom modules, put them here (optional)
-filter_plugins/           # if any custom filter plugins, put them here (optional)</p>
-<p>site.yml                  # master playbook
-webservers.yml            # playbook for webserver tier
-dbservers.yml             # playbook for dbserver tier</p>
-<p>roles/
-    common/               # this hierarchy represents a "role"
-        tasks/            #
-            main.yml      #  &lt;-- tasks file can include smaller files if warranted
-        handlers/         #
-            main.yml      #  &lt;-- handlers file
-        templates/        #  &lt;-- files for use with the template resource
-            ntp.conf.j2   #  &lt;------- templates end in .j2
-        files/            #
-            bar.txt       #  &lt;-- files for use with the copy resource
-            foo.sh        #  &lt;-- script files for use with the script resource
-        vars/             #
-            main.yml      #  &lt;-- variables associated with this role
-        defaults/         #
-            main.yml      #  &lt;-- default lower priority variables for this role
-        meta/             #
-            main.yml      #  &lt;-- role dependencies</p>
-<div class="highlight"><pre><span></span>webtier/              # same kind of structure as &quot;common&quot; was above, done for the webtier role
-monitoring/           # &quot;&quot;
-fooapp/               # &quot;&quot;
+    <p>This is based on the the Ansible best practices documented here.
+http://docs.ansible.com/ansible/playbooks_best_practices.html</p>
+<div class="highlight"><pre><span></span><span class="ch">#! /bin/bash</span>
+
+<span class="c1"># make a directory for roles`</span>
+mkdir roles
+
+<span class="c1"># make a directory for group variables</span>
+mkdir group_vars
+
+<span class="c1"># make a directory for all</span>
+mkdir group_vars/all
+
+<span class="c1"># add a vars file and add a variable to it</span>
+touch group_vars/all/vars.yml
+<span class="nb">echo</span> <span class="s1">&#39;my_var: {{ vault_my_var }}&#39;</span> &gt;&gt; group_vars/all/vars.yml
+
+<span class="c1"># add a vault file, a vaiable and encrypt it</span>
+touch group_vars/all/vault.yml
+<span class="nb">echo</span> vault_my_var: <span class="m">12345</span> &gt;&gt; group_vars/all/vault.yml
+ansible-vault encrypt group_vars/all/vault.yml
+
+<span class="c1"># make a directory for host variables</span>
+mkdir host_vars
+
+<span class="c1"># if any custom modules, put them here       </span>
+mkdir library  
+
+<span class="c1">#if any custom filter plugins, put them here       </span>
+mkdir filter_plugins
+
+<span class="c1">#callback directory  </span>
+mkdir callback_plugins
+
+<span class="c1">#make a root file</span>
+touch site.yml
+
+<span class="c1">#add an ansible.cfg file    </span>
+touch ansible.cfg  
+
+<span class="c1"># add some basics to the ansible.cfg    </span>
+cat &gt; ansible.cfg <span class="s">&lt;&lt;EOL</span>
+<span class="s">[defaults]</span>
+<span class="s">callback_plugins = ./callback_plugins</span>
+<span class="s">filter_plugins = ./filter_plugins</span>
+<span class="s">vault_password_file = vault_pass.py</span>
+<span class="s">log_path = ./log.txt</span>
+<span class="s">EOL</span>
+
+<span class="c1"># add the vault decryption script to get the vault password from an environment variables</span>
+cat &gt; vault_pass.py <span class="s">&lt;&lt;EOL</span>
+<span class="s">!/usr/bin/python</span>
+<span class="s">import os</span>
+<span class="s">print os.environ.get(&#39;ANSIBLE_VAULT_PASSWORD&#39;)</span>
+<span class="s">EOL</span>
+
+<span class="nb">echo</span> The value of environment variable ANSIBLE_VAULT_PASSWORD will be used to decrypt the vault.
+
+<span class="c1"># build a new role called default</span>
+ansible-galaxy init --init-path<span class="o">=</span>roles --offline --verbose default
+
+<span class="c1"># review what&#39;s built</span>
+tree
 </pre></div>
   </div>
 </article>
