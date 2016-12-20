@@ -1,5 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network|automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2016-12-20T16:06:06-08:00</updated><entry><title>Keep a running change log in Ansible</title><link href="https://cidrblock.github.io/keep-a-running-change-log-in-ansible.html" rel="alternate"></link><published>2016-12-20T16:06:06-08:00</published><updated>2016-12-20T16:06:06-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2016-12-20:/keep-a-running-change-log-in-ansible.html</id><summary type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network|automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2016-12-20T18:12:54-08:00</updated><entry><title></title><link href="https://cidrblock.github.io/Ansible%20playbook%20from%20scratch.html" rel="alternate"></link><published>2016-12-20T18:12:54-08:00</published><updated>2016-12-20T18:12:54-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2016-12-20:/Ansible playbook from scratch.html</id><summary type="html">&lt;p&gt;Build an ansible playbook from scratch.&lt;/p&gt;</summary><content type="html">&lt;p&gt;This is based on the the Ansible best practice directory layout.&lt;/p&gt;
+&lt;h1&gt;install tree&lt;/h1&gt;
+&lt;p&gt;apt-get install tree&lt;/p&gt;
+&lt;h1&gt;make a directory for roles`&lt;/h1&gt;
+&lt;p&gt;mkdir roles&lt;/p&gt;
+&lt;h1&gt;make a directory for group variables&lt;/h1&gt;
+&lt;p&gt;mkdir group_vars&lt;/p&gt;
+&lt;h1&gt;make a directory for all&lt;/h1&gt;
+&lt;p&gt;mkdir group_vars/all&lt;/p&gt;
+&lt;h1&gt;add a vars file and add a variable to it&lt;/h1&gt;
+&lt;p&gt;touch group_vars/all/vars.yml
+echo my_var: {{ vault_my_var }} &amp;gt;&amp;gt; group_vars/all/vars.yml&lt;/p&gt;
+&lt;h1&gt;add a vault file, a vaiable and encrypt it&lt;/h1&gt;
+&lt;p&gt;touch group_vars/all/vault.yml
+echo vault_my_var: 12345 &amp;gt;&amp;gt; group_vars/all/vault.yml
+ansible-vault encrypt group_vars/all/vault.yml&lt;/p&gt;
+&lt;h1&gt;make a directory for host variables&lt;/h1&gt;
+&lt;p&gt;mkdir host_vars&lt;/p&gt;
+&lt;h1&gt;if any custom modules, put them here&lt;/h1&gt;
+&lt;p&gt;mkdir library  &lt;/p&gt;
+&lt;h1&gt;if any custom filter plugins, put them here&lt;/h1&gt;
+&lt;p&gt;mkdir filter_plugins&lt;/p&gt;
+&lt;h1&gt;callback directory&lt;/h1&gt;
+&lt;p&gt;mkdir callback_plugins&lt;/p&gt;
+&lt;h1&gt;make a root file&lt;/h1&gt;
+&lt;p&gt;touch site.yml&lt;/p&gt;
+&lt;h1&gt;add an ansible.cfg file&lt;/h1&gt;
+&lt;p&gt;touch ansible.cfg  &lt;/p&gt;
+&lt;h1&gt;add some basics to the ansible.cfg&lt;/h1&gt;
+&lt;p&gt;cat &amp;gt; ansible.cfg &amp;lt;&amp;lt;EOL
+[defaults]
+callback_plugins = ./callback_plugins
+filter_plugins = ./filter_plugins
+vault_password_file = vault_pass.py
+log_path = ./log.txt
+EOL&lt;/p&gt;
+&lt;h1&gt;add the vault decryption script to get the vault password from an environment variables&lt;/h1&gt;
+&lt;p&gt;cat &amp;gt; vault_pass.py &amp;lt;&amp;lt;EOL
+!/usr/bin/python
+import os
+print os.environ.get('ANSIBLE_VAULT_PASSWORD')
+EOL&lt;/p&gt;
+&lt;p&gt;echo The value of environment variable ANSIBLE_VAULT_PASSWORD will be used to decrypt the vault.&lt;/p&gt;
+&lt;h1&gt;build a new role called default&lt;/h1&gt;
+&lt;p&gt;ansible-galaxy init --init-path=roles --offline --verbose logger&lt;/p&gt;
+&lt;h1&gt;review what's built&lt;/h1&gt;
+&lt;p&gt;tree&lt;/p&gt;
+&lt;p&gt;group_vars/
+host_vars/
+   hostname1              # if systems need specific variables, put them here
+   hostname2              # ""&lt;/p&gt;
+&lt;p&gt;library/                  # if any custom modules, put them here (optional)
+filter_plugins/           # if any custom filter plugins, put them here (optional)&lt;/p&gt;
+&lt;p&gt;site.yml                  # master playbook
+webservers.yml            # playbook for webserver tier
+dbservers.yml             # playbook for dbserver tier&lt;/p&gt;
+&lt;p&gt;roles/
+    common/               # this hierarchy represents a "role"
+        tasks/            #
+            main.yml      #  &amp;lt;-- tasks file can include smaller files if warranted
+        handlers/         #
+            main.yml      #  &amp;lt;-- handlers file
+        templates/        #  &amp;lt;-- files for use with the template resource
+            ntp.conf.j2   #  &amp;lt;------- templates end in .j2
+        files/            #
+            bar.txt       #  &amp;lt;-- files for use with the copy resource
+            foo.sh        #  &amp;lt;-- script files for use with the script resource
+        vars/             #
+            main.yml      #  &amp;lt;-- variables associated with this role
+        defaults/         #
+            main.yml      #  &amp;lt;-- default lower priority variables for this role
+        meta/             #
+            main.yml      #  &amp;lt;-- role dependencies&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;webtier/              # same kind of structure as &amp;quot;common&amp;quot; was above, done for the webtier role
+monitoring/           # &amp;quot;&amp;quot;
+fooapp/               # &amp;quot;&amp;quot;
+&lt;/pre&gt;&lt;/div&gt;</content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Keep a running change log in Ansible</title><link href="https://cidrblock.github.io/keep-a-running-change-log-in-ansible.html" rel="alternate"></link><published>2016-12-20T16:06:06-08:00</published><updated>2016-12-20T16:06:06-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2016-12-20:/keep-a-running-change-log-in-ansible.html</id><summary type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;
 &lt;p&gt;In group_vars/all, you'll need a new variable to store all the changes through the playbook run:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;# group_vars/all&lt;/span&gt;
 &lt;span class="l l-Scalar l-Scalar-Plain"&gt;changes&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[]&lt;/span&gt;
