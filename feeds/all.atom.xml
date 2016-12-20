@@ -1,2 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>codethenetwork: cognizance</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2010-12-05T19:30:00-08:00</updated><entry><title>My super title</title><link href="https://cidrblock.github.io/my-super-post.html" rel="alternate"></link><published>2010-12-03T10:20:00-08:00</published><updated>2010-12-05T19:30:00-08:00</updated><author><name>Alexis Metaireau</name></author><id>tag:cidrblock.github.io,2010-12-03:/my-super-post.html</id><summary type="html">&lt;p&gt;Short version for index and feeds&lt;/p&gt;</summary><content type="html">&lt;p&gt;This is the content of my super blog post.&lt;/p&gt;</content><category term="pelican"></category><category term="publishing"></category></entry></feed>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>codethenetwork: cognizance</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2010-12-05T19:30:00-08:00</updated><entry><title>My super title</title><link href="https://cidrblock.github.io/my-super-post.html" rel="alternate"></link><published>2010-12-03T10:20:00-08:00</published><updated>2010-12-05T19:30:00-08:00</updated><author><name>Alexis Metaireau</name></author><id>tag:cidrblock.github.io,2010-12-03:/my-super-post.html</id><summary type="html">&lt;p&gt;Short version for index and feeds&lt;/p&gt;</summary><content type="html">&lt;p&gt;Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.&lt;/p&gt;
+&lt;p&gt;In group_vars/all, you'll need a new variable to store all the changes through the playbook run:&lt;/p&gt;
+&lt;p&gt;changes: []&lt;/p&gt;
+&lt;p&gt;Then, as you make changes, append the changes to the change variable:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="x"&gt;- name: Remediate the device (&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;os&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;)&lt;/span&gt;
+&lt;span class="x"&gt;  ios_config:&lt;/span&gt;
+&lt;span class="x"&gt;    host: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;inventory_hostname&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
+&lt;span class="x"&gt;    authorize: yes&lt;/span&gt;
+&lt;span class="x"&gt;    timeout: 60&lt;/span&gt;
+&lt;span class="x"&gt;    lines: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;base_config&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;users_remove&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;enable_remove&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
+&lt;span class="x"&gt;  register: config_changes&lt;/span&gt;
+&lt;span class="x"&gt;  notify: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;os&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;_save_config&amp;#39;&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
+
+&lt;span class="x"&gt;- name: Append changes to log (&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;os&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;)&lt;/span&gt;
+&lt;span class="x"&gt;  set_fact:&lt;/span&gt;
+&lt;span class="x"&gt;    changes: &amp;quot;&lt;/span&gt;&lt;span class="cp"&gt;{{&lt;/span&gt; &lt;span class="nv"&gt;changes&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;*** ROLE: &amp;#39;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;role_path&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="nf"&gt;basename&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39; ***&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;config_changes&lt;/span&gt;&lt;span class="o"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;updates&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt; &lt;span class="cp"&gt;}}&lt;/span&gt;&lt;span class="x"&gt;&amp;quot;&lt;/span&gt;
+&lt;span class="x"&gt;  when: config_changes[&amp;#39;updates&amp;#39;] is defined&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Make a new role, called 'report' which can get run as the last role in the playbook:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;name: Show config changes for device
+debug: msg="{{ changes }}"
+when: changes|length &amp;gt; 0
+tags:&lt;/li&gt;
+&lt;li&gt;report&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now at the end of the playbook, before the summary a nice per device report is created. The 'changes' var could also be written to a file.&lt;/p&gt;</content><category term="pelican"></category><category term="publishing"></category></entry></feed>

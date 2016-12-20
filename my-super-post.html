@@ -9,14 +9,16 @@
 
   <title>My super title | codethenetwork: cognizance
 </title>
-  <link rel="canonical" href="/my-super-post.html">
+  <link rel="canonical" href="https://cidrblock.github.io/my-super-post.html">
+
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/all.atom.xml" title="Full Atom Feed">
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/python.atom.xml" title="Categories Atom Feed">
 
 
-
-  <link rel="stylesheet" href="/theme/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/theme/css/font-awesome.min.css">
-  <link rel="stylesheet" href="/theme/css/pygments/default.min.css">
-  <link rel="stylesheet" href="/theme/css/style.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/pygments/default.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/style.css">
 
 
 <meta name="description" content="Short version for index and feeds">
@@ -27,7 +29,7 @@
     <div class="container">
       <div class="row">
         <div class="col-sm-12">
-          <h1 class="title"><a href="">codethenetwork: cognizance</a></h1>
+          <h1 class="title"><a href="https://cidrblock.github.io">codethenetwork: cognizance</a></h1>
           <ul class="list-inline">
             <li class="list-inline-item"><a href="http://getpelican.com/" target="_blank">Pelican</a></li>
             <li class="list-inline-item"><a href="http://python.org/" target="_blank">Python.org</a></li>
@@ -53,18 +55,46 @@
       </li>
       <li class="list-inline-item">
         <i class="fa fa-folder-open-o"></i>
-        <a href="/category/python.html">Python</a>
+        <a href="https://cidrblock.github.io/category/python.html">Python</a>
       </li>
       <li class="list-inline-item">
         <i class="fa fa-user-o"></i>
-        <a href="/author/alexis-metaireau.html">Alexis Metaireau</a>,         <a href="/author/conan-doyle.html">Conan Doyle</a>      </li>
+        <a href="https://cidrblock.github.io/author/alexis-metaireau.html">Alexis Metaireau</a>,         <a href="https://cidrblock.github.io/author/conan-doyle.html">Conan Doyle</a>      </li>
       <li class="list-inline-item">
         <i class="fa fa-files-o"></i>
-        <a href="/tag/pelican.html">#pelican</a>,         <a href="/tag/publishing.html">#publishing</a>      </li>
+        <a href="https://cidrblock.github.io/tag/pelican.html">#pelican</a>,         <a href="https://cidrblock.github.io/tag/publishing.html">#publishing</a>      </li>
     </ul>
   </header>
   <div class="content">
-    <p>This is the content of my super blog post.</p>
+    <p>Ever need a nice report of all proposed changes across all network devices when running in check mode? How about an after the fact changelog per device after the run.</p>
+<p>In group_vars/all, you'll need a new variable to store all the changes through the playbook run:</p>
+<p>changes: []</p>
+<p>Then, as you make changes, append the changes to the change variable:</p>
+<div class="highlight"><pre><span></span><span class="x">- name: Remediate the device (</span><span class="cp">{{</span> <span class="nv">os</span> <span class="cp">}}</span><span class="x">)</span>
+<span class="x">  ios_config:</span>
+<span class="x">    host: &quot;</span><span class="cp">{{</span> <span class="nv">inventory_hostname</span> <span class="cp">}}</span><span class="x">&quot;</span>
+<span class="x">    authorize: yes</span>
+<span class="x">    timeout: 60</span>
+<span class="x">    lines: &quot;</span><span class="cp">{{</span> <span class="nv">base_config</span> <span class="o">+</span> <span class="nv">users_remove</span> <span class="o">+</span> <span class="nv">enable_remove</span> <span class="cp">}}</span><span class="x">&quot;</span>
+<span class="x">  register: config_changes</span>
+<span class="x">  notify: &quot;</span><span class="cp">{{</span> <span class="nv">os</span> <span class="o">+</span> <span class="s1">&#39;_save_config&#39;</span> <span class="cp">}}</span><span class="x">&quot;</span>
+
+<span class="x">- name: Append changes to log (</span><span class="cp">{{</span> <span class="nv">os</span> <span class="cp">}}</span><span class="x">)</span>
+<span class="x">  set_fact:</span>
+<span class="x">    changes: &quot;</span><span class="cp">{{</span> <span class="nv">changes</span> <span class="o">+</span> <span class="o">[</span><span class="s1">&#39;*** ROLE: &#39;</span> <span class="o">+</span> <span class="nv">role_path</span><span class="o">|</span><span class="nf">basename</span> <span class="o">+</span> <span class="s1">&#39; ***&#39;</span><span class="o">]</span> <span class="o">+</span> <span class="nv">config_changes</span><span class="o">[</span><span class="s1">&#39;updates&#39;</span><span class="o">]</span> <span class="cp">}}</span><span class="x">&quot;</span>
+<span class="x">  when: config_changes[&#39;updates&#39;] is defined</span>
+</pre></div>
+
+
+<p>Make a new role, called 'report' which can get run as the last role in the playbook:</p>
+<ul>
+<li>name: Show config changes for device
+debug: msg="{{ changes }}"
+when: changes|length &gt; 0
+tags:</li>
+<li>report</li>
+</ul>
+<p>Now at the end of the playbook, before the summary a nice per device report is created. The 'changes' var could also be written to a file.</p>
   </div>
 </article>
     </div>
@@ -74,10 +104,10 @@
     <div class="container">
       <div class="row">
        <ul class="col-sm-6 list-inline">
-          <li class="list-inline-item"><a href="/authors.html">Authors</a></li>
-          <li class="list-inline-item"><a href="/archives.html">Archives</a></li>
-          <li class="list-inline-item"><a href="/categories.html">Categories</a></li>
-          <li class="list-inline-item"><a href="/tags.html">Tags</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/authors.html">Authors</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/archives.html">Archives</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/categories.html">Categories</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/tags.html">Tags</a></li>
         </ul>
         <p class="col-sm-6 text-sm-right text-muted">
           Generated by <a href="https://github.com/getpelican/pelican" target="_blank">Pelican</a> / <a href="https://github.com/nairobilug/pelican-alchemy" target="_blank">&#x2728;</a>
