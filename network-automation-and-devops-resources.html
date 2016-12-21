@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags always come first -->
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Network automation and devops resources | network | automation
+</title>
+  <link rel="canonical" href="https://cidrblock.github.io/network-automation-and-devops-resources.html">
+
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/all.atom.xml" title="Full Atom Feed">
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/ansible.atom.xml" title="Categories Atom Feed">
+
+
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/pygments/default.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/style.css">
+  <link href="https://fonts.googleapis.com/css?family=Anonymous+Pro" rel="stylesheet">
+
+
+<meta name="description" content="A list of on-line resource for network automation and tools.">
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1 class="title"><a href="https://cidrblock.github.io">network | automation</a></h1>
+          <ul class="list-inline">
+            <li class="list-inline-item"><a href="http://drawthe.net/" target="_blank">[drawthe.net]</a></li>
+            <li class="list-inline-item"><a href="https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwiKscj5lYPRAhUT4GMKHdAsBM4QFgghMAE&url=https%3A%2F%2Ftwitter.com%2Fjedelman8%2Fstatus%2F663808419783045120&usg=AFQjCNGWhcMLiY_-O6QZwG82IxyIMHqXoA" target="_blank">[#networktocode]</a></li>
+            <li class="list-inline-item"><a href="https://github.com/cidrblock/cidrblock.github.io-src/issues" target="_blank">[comments/issues]</a></li>
+            <li class="list-inline-item"><a href="network-automation-and-devops-resources.html" target="_blank">[netdevops resources]</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="container">
+      <h1>Network automation and devops resources
+</h1>
+      <hr>
+<article class="article">
+  <header>
+    <ul class="list-inline">
+      <li class="list-inline-item text-muted" title="2016-12-20T23:59:34.548542-08:00">
+        <i class="fa fa-clock-o"></i>
+        Tue 20 December 2016
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-folder-open-o"></i>
+        <a href="https://cidrblock.github.io/category/ansible.html">ansible</a>
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-user-o"></i>
+        <a href="https://cidrblock.github.io/author/bradley-a-thornton.html">Bradley A. Thornton</a>      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-files-o"></i>
+        <a href="https://cidrblock.github.io/tag/ansible.html">#ansible</a>,         <a href="https://cidrblock.github.io/tag/netdevops.html">#netdevops</a>      </li>
+    </ul>
+  </header>
+  <div class="content">
+    <div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">this</span>
+<span class="n">The</span> <span class="n">Zen</span> <span class="n">of</span> <span class="n">Python</span><span class="p">,</span> <span class="n">by</span> <span class="n">Tim</span> <span class="n">Peters</span>
+
+<span class="n">Beautiful</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="n">ugly</span><span class="o">.</span>
+<span class="n">Explicit</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="n">implicit</span><span class="o">.</span>
+<span class="n">Simple</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="nb">complex</span><span class="o">.</span>
+<span class="n">Complex</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="n">complicated</span><span class="o">.</span>
+<span class="n">Flat</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="n">nested</span><span class="o">.</span>
+<span class="n">Sparse</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="n">dense</span><span class="o">.</span>
+<span class="n">Readability</span> <span class="n">counts</span><span class="o">.</span>
+<span class="n">Special</span> <span class="n">cases</span> <span class="n">aren</span><span class="s1">&#39;t special enough to break the rules.</span>
+<span class="n">Although</span> <span class="n">practicality</span> <span class="n">beats</span> <span class="n">purity</span><span class="o">.</span>
+<span class="n">Errors</span> <span class="n">should</span> <span class="n">never</span> <span class="k">pass</span> <span class="n">silently</span><span class="o">.</span>
+<span class="n">Unless</span> <span class="n">explicitly</span> <span class="n">silenced</span><span class="o">.</span>
+<span class="n">In</span> <span class="n">the</span> <span class="n">face</span> <span class="n">of</span> <span class="n">ambiguity</span><span class="p">,</span> <span class="n">refuse</span> <span class="n">the</span> <span class="n">temptation</span> <span class="n">to</span> <span class="n">guess</span><span class="o">.</span>
+<span class="n">There</span> <span class="n">should</span> <span class="n">be</span> <span class="n">one</span><span class="o">--</span> <span class="ow">and</span> <span class="n">preferably</span> <span class="n">only</span> <span class="n">one</span> <span class="o">--</span><span class="n">obvious</span> <span class="n">way</span> <span class="n">to</span> <span class="n">do</span> <span class="n">it</span><span class="o">.</span>
+<span class="n">Although</span> <span class="n">that</span> <span class="n">way</span> <span class="n">may</span> <span class="ow">not</span> <span class="n">be</span> <span class="n">obvious</span> <span class="n">at</span> <span class="n">first</span> <span class="n">unless</span> <span class="n">you</span><span class="s1">&#39;re Dutch.</span>
+<span class="n">Now</span> <span class="ow">is</span> <span class="n">better</span> <span class="n">than</span> <span class="n">never</span><span class="o">.</span>
+<span class="n">Although</span> <span class="n">never</span> <span class="ow">is</span> <span class="n">often</span> <span class="n">better</span> <span class="n">than</span> <span class="o">*</span><span class="n">right</span><span class="o">*</span> <span class="n">now</span><span class="o">.</span>
+<span class="n">If</span> <span class="n">the</span> <span class="n">implementation</span> <span class="ow">is</span> <span class="n">hard</span> <span class="n">to</span> <span class="n">explain</span><span class="p">,</span> <span class="n">it</span><span class="s1">&#39;s a bad idea.</span>
+<span class="n">If</span> <span class="n">the</span> <span class="n">implementation</span> <span class="ow">is</span> <span class="n">easy</span> <span class="n">to</span> <span class="n">explain</span><span class="p">,</span> <span class="n">it</span> <span class="n">may</span> <span class="n">be</span> <span class="n">a</span> <span class="n">good</span> <span class="n">idea</span><span class="o">.</span>
+<span class="n">Namespaces</span> <span class="n">are</span> <span class="n">one</span> <span class="n">honking</span> <span class="n">great</span> <span class="n">idea</span> <span class="o">--</span> <span class="n">let</span><span class="s1">&#39;s do more of those!</span>
+</pre></div>
+
+
+<h3>GIT &amp; GITHUB</h3>
+<p>This course is for developers and system administrators who want to really understand Git. Whether you just started using Git, or you've been using it every day for months - this course will give you the knowledge you need to become a Git master.</p>
+<p><a href="https://app.pluralsight.com/library/courses/how-git-works/table-of-contents">https://app.pluralsight.com/library/courses/how-git-works/table-of-contents</a></p>
+<p>If you already have some experience with Git, then this is the training that will make you an expert. From a deep look at the fundamental commands, to the design of a distributed workflow, this training gives you a full overview of the Git toolset.</p>
+<p><a href="https://app.pluralsight.com/courses/mastering-git">https://app.pluralsight.com/courses/mastering-git</a></p>
+<p>Got 15 minutes and want to learn Git?</p>
+<p><a href="https://try.github.io/levels/1/challenges/1">https://try.github.io/levels/1/challenges/1</a></p>
+<p>On Demand Training. You’re in control. We’re with you along the way.</p>
+<p><a href="https://github.github.com/on-demand/">https://github.github.com/on-demand/</a></p>
+<p>While there is nothing really shocking new to this branching model, the “big picture” figure that this post began with has turned out to be tremendously useful in our projects. It forms an elegant mental model that is easy to comprehend and allows team members to develop a shared understanding of the branching and releasing processes.</p>
+<p><a href="http://nvie.com/posts/a-successful-git-branching-model/">http://nvie.com/posts/a-successful-git-branching-model/</a></p>
+<p>Learn Git Version Control using Interactive Browser-Based Labs</p>
+<p><a href="https://www.katacoda.com/courses/git">https://www.katacoda.com/courses/git</a></p>
+<h3>PYTHON</h3>
+<p>Automation is the new skillset that network engineers need to pick up. Much like sysadmins have had to learn how to use new tools like Chef and Puppet, network engineers are learning that they just can't do things manually anymore.</p>
+<p><a href="https://www.safaribooksonline.com/library/view/network-programmability-and/9781491931240/">https://www.safaribooksonline.com/library/view/network-programmability-and/9781491931240/</a></p>
+<p>Ok, so python is this thing called a programming language. It takes text that you’ve written (usually referred to as code), turns it into instructions for your computer, and runs those instructions. We’ll be learning how to write code to do cool and useful stuff. No longer will you be bound to use others’ programs to do things with your computer - you can make your own!</p>
+<p><a href="http://opentechschool.github.io/python-beginners/en/index.html">http://opentechschool.github.io/python-beginners/en/index.html</a></p>
+<p>Python Fundamentals gets you started with Python, a dynamic language popular for web development, big data, science, and scripting.</p>
+<p><a href="https://app.pluralsight.com/library/courses/python-fundamentals/table-of-contents">https://app.pluralsight.com/library/courses/python-fundamentals/table-of-contents</a></p>
+<p>Welcome to Google's Python Class -- this is a free class for people with a little bit of programming experience who want to learn Python. The class includes written materials, lecture videos, and lots of code exercises to practice Python coding.</p>
+<p><a href="https://developers.google.com/edu/python/">https://developers.google.com/edu/python/</a></p>
+<p>Sharpen your skills. Challenge yourself on kata, created by the community to strengthen different skills. Master your current language of choice, or expand your understanding of a new one.</p>
+<p><a href="http://www.codewars.com/?language=python">http://www.codewars.com/?language=python</a></p>
+<p>We’ll give you a personalized Learning Plan with the recommended key skills to master. You’ll be able to track your progress against this plan, and add courses whenever you decide you want to learn something new!</p>
+<p><a href="http://www.codewars.com/?language=python">https://www.codecademy.com/learn/python</a></p>
+<p>My name is Kirk Byers. I am a CCIE (emeritus) in routing and switching and have extensive Python experience. Since 2014, I have been teaching Python and Ansible to network engineers. I also wrote the Netmiko Python library and contributed the IOS driver to NAPALM.</p>
+<p><a href="https://pynet.twb-tech.com">https://pynet.twb-tech.com</a></p>
+<p>Welcome to the 3rd Edition of Learn Python the Hard Way.</p>
+<p><a href="https://learnpythonthehardway.org/book/">https://learnpythonthehardway.org/book/</a></p>
+<p>A style guide is about consistency. Consistency with this style guide is important. Consistency within a project is more important. Consistency within one module or function is the most important.</p>
+<p><a href="https://www.python.org/dev/peps/pep-0008/">https://www.python.org/dev/peps/pep-0008/</a></p>
+<p>How To Make Friends And Influence APIs</p>
+<p><a href="https://realpython.com/blog/python/api-integration-in-python">https://realpython.com/blog/python/api-integration-in-python</a></p>
+<h3>ANSIBLE</h3>
+<p>What will I learn in this tutorial? You will learn how to use Ansible to configure a Linux host.</p>
+<p><a href="https://www.katacoda.com/jonatanblue/scenarios/1">https://www.katacoda.com/jonatanblue/scenarios/1</a></p>
+<p>Here I'll show how easy it is to get started with Ansible. We'll start basic and then add in more features as we improve upon our configurations.</p>
+<p><a href="https://serversforhackers.com/an-ansible-tutorial">https://serversforhackers.com/an-ansible-tutorial</a></p>
+<p>This course will show you how to get started with automation and orchestration using the open-source tool Ansible version 1.x. Many hands-on demos are included to show how to implement your automation tasks.</p>
+<p><a href="https://app.pluralsight.com/library/courses/hands-on-ansible/table-of-contents">https://app.pluralsight.com/library/courses/hands-on-ansible/table-of-contents</a></p>
+<p>Most of the time there is no need to create a custom module. However, sometimes it's the best (or even only way) to interact with a certain piece of software.</p>
+<p><a href="http://blog.toast38coza.me/custom-ansible-module-hello-world/">http://blog.toast38coza.me/custom-ansible-module-hello-world/</a></p>
+<p>In this article, I will show you how to use Ansible to generate network device configurations based on a template and a variables file.</p>
+<p><a href="https://pynet.twb-tech.com/blog/ansible/ansible-cfg-template.html">https://pynet.twb-tech.com/blog/ansible/ansible-cfg-template.html</a></p>
+<p>VXLAN Programmable Fabric for NX-OS with Ansible</p>
+<p><a href="https://www.youtube.com/watch?v=M-Rts20kpnc">https://www.youtube.com/watch?v=M-Rts20kpnc</a></p>
+<p>Using Ansible for Configuration Management and Deployments</p>
+<p><a href="https://linuxacademy.com/devops/training/course/name/using-ansible-for-configuration-management-and-deployments">https://linuxacademy.com/devops/training/course/name/using-ansible-for-configuration-management-and-deployments</a></p>
+<p>A complete guide to configuration management and orchestration with Ansible.</p>
+<p><a href="https://www.udemy.com/mastering-ansible/">https://www.udemy.com/mastering-ansible/</a></p>
+<p>Learn the basics of Ansible automation and configuration management, and more</p>
+<p><a href="https://www.redhat.com/en/services/training/do007-ansible-essentials-simplicity-automation-technical-overview?sc_cid=70160000001202aAAA">https://www.redhat.com/en/services/training/do007-ansible-essentials-simplicity-automation-technical-overview?sc_cid=70160000001202aAAA</a></p>
+<h3>DOCKER</h3>
+<p>Learn Docker &amp; Containers using Interactive Browser-Based Labs</p>
+<p><a href="https://www.katacoda.com/courses/docker">https://www.katacoda.com/courses/docker</a></p>
+<p>Learn Docker Orchestration using Interactive Browser-Based Labs, Understand real world patterns and approaches in a live environment without any downloads or configuration</p>
+<p><a href="https://www.katacoda.com/courses/docker-orchestration">https://www.katacoda.com/courses/docker-orchestration</a></p>
+<p>This course will get learners quickly up to speed with the fundamentals of Docker and containers. The course includes major new features introduced in Docker 1.12, including Swarm mode, services, and stacks.</p>
+<p><a href="https://www.pluralsight.com/courses/docker-getting-started">https://www.pluralsight.com/courses/docker-getting-started</a></p>
+<h3>BASH</h3>
+<p>This course introduces you to the basic concepts and commands you need to start using Bash on Linux and Mac OS X.</p>
+<p><a href="https://app.pluralsight.com/library/courses/introduction-bash-shell-linux-mac-os/table-of-contents">https://app.pluralsight.com/library/courses/introduction-bash-shell-linux-mac-os/table-of-contents</a></p>
+<h3>JSON, YAML, AND MARKDOWN</h3>
+<p>JSON is a syntax for storing and exchanging data.</p>
+<p><a href="http://www.w3schools.com/js/js_json_intro.asp">http://www.w3schools.com/js/js_json_intro.asp</a></p>
+<p>This page provides a basic overview of correct YAML syntax, which is how Ansible playbooks (our configuration management language) are expressed.</p>
+<p><a href="http://docs.ansible.com/ansible/YAMLSyntax.html">http://docs.ansible.com/ansible/YAMLSyntax.html</a></p>
+<p>YAML (/ˈjæməl/, rhymes with camel) is a human-readable data serialization language.</p>
+<p><a href="https://en.wikipedia.org/wiki/YAML">https://en.wikipedia.org/wiki/YAML</a></p>
+<p>Paste in your YAML and click "Go" - we'll tell you if it's valid or not, and give you a nice clean UTF-8 version of it.</p>
+<p><a href="http://www.yamllint.com/">http://www.yamllint.com/</a></p>
+<p>If you have ten minutes, you can learn Markdown!</p>
+<p><a href="http://www.markdowntutorial.com/">http://www.markdowntutorial.com/</a></p>
+<h3>TOOLS</h3>
+<p>A hackable text editor for the 21st Century</p>
+<p><a href="https://atom.io/">https://atom.io/</a></p>
+<p>Modern software is built on APIs.</p>
+<p><a href="https://www.getpostman.com/">https://www.getpostman.com/</a></p>
+<p>Curl is a command line tool for doing all sorts of URL manipulations and transfers, but this particular document will focus on how to use it when doing HTTP requests for fun and profit.</p>
+<p><a href="https://curl.haxx.se/docs/httpscripting.html">https://curl.haxx.se/docs/httpscripting.html</a></p>
+<p>HTTPie—aitch-tee-tee-pie—is an open source CLI HTTP client that will make you smile.</p>
+<p><a href="https://httpie.org/">https://httpie.org/</a></p>
+<p>The OpenAPI Specification is an API description format or API definition language. Basically, an OpenAPI Specification file allow you to describe an API.</p>
+<p><a href="https://apihandyman.io/writing-openapi-swagger-specification-tutorial-part-1-introduction/">https://apihandyman.io/writing-openapi-swagger-specification-tutorial-part-1-introduction/</a></p>
+<p>Beautify Your Terminal Experience</p>
+<p><a href="http://goodheads.io/2015/09/13/beautify-your-terminal-experience/">http://goodheads.io/2015/09/13/beautify-your-terminal-experience/</a></p>
+  </div>
+</article>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+       <ul class="col-sm-6 list-inline">
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/authors.html">Authors</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/archives.html">Archives</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/categories.html">Categories</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/tags.html">Tags</a></li>
+        </ul>
+        <p class="col-sm-6 text-sm-right text-muted">
+          Generated by <a href="https://github.com/getpelican/pelican" target="_blank">Pelican</a> / <a href="https://github.com/nairobilug/pelican-alchemy" target="_blank">&#x2728;</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
