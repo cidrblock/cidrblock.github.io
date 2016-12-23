@@ -161,7 +161,7 @@ cat &amp;gt; ansible.cfg &lt;span class="s"&gt;&amp;lt;&amp;lt;EOL&lt;/span&gt;
 
 &lt;span class="c1"&gt;# add the vault decryption script to get the vault password from an environment variables&lt;/span&gt;
 cat &amp;gt; vault_pass.py &lt;span class="s"&gt;&amp;lt;&amp;lt;EOL&lt;/span&gt;
-&lt;span class="s"&gt;!/usr/bin/python&lt;/span&gt;
+&lt;span class="s"&gt;#!/usr/bin/env python&lt;/span&gt;
 &lt;span class="s"&gt;import os&lt;/span&gt;
 &lt;span class="s"&gt;print os.environ.get(&amp;#39;ANSIBLE_VAULT_PASSWORD&amp;#39;)&lt;/span&gt;
 &lt;span class="s"&gt;EOL&lt;/span&gt;
