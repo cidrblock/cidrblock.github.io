@@ -297,4 +297,4 @@ rm -rf python-flask-server
 &lt;p&gt;or using the swagger editor or UI built into your project:&lt;/p&gt;
 &lt;p&gt;http://localhost:8080/api/v1/ui/&lt;/p&gt;
 &lt;h3&gt;Congratulations&lt;/h3&gt;
-&lt;p&gt;You just wrote your first REST API.&lt;/p&gt;</content><category term="python"></category><category term="netdevops"></category></entry></feed>
+&lt;p&gt;You just wrote your first REST API. Take a few minutes to look through the directories and models. One word of caution, if you rerun the &lt;code&gt;submit.py&lt;/code&gt; script it will overwrite your changes in the swagger_server directory.&lt;/p&gt;</content><category term="python"></category><category term="netdevops"></category></entry></feed>
