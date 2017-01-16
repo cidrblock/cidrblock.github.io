@@ -67,7 +67,7 @@
     </ul>
   </header>
   <div class="content">
-    <p>Are you are a network engineer and spend most of your time doing service delivery, instead of network engineering, architecture, and automation?  One way to eliminate the <a href="https://www.safaribooksonline.com/library/view/site-reliability-engineering/9781491929117/ch05.html">toil</a> might be to expose your services as APIs so your customers can consume them. Ansible and python are popular tools for network automation.  Using YAML and python a simple design-first API can be written will little to no code.</p>
+    <p>Are you are a network engineer and spend most of your time doing service delivery, instead of network engineering, architecture, and automation?  One way to eliminate the <a href="https://www.safaribooksonline.com/library/view/site-reliability-engineering/9781491929117/ch05.html">toil</a> might be to expose your services as APIs so your customers can consume them, self-service and programatically. Ansible and python are popular tools for network automation.  Using familiar tools, YAML and python, a simple design-first API can be written will little to no code.</p>
 <p>This tutorial should take no more than a few minutes to work through and results in a documented, usable API in a format your application devops team should be ready to consume.</p>
 <h2>Getting started</h2>
 <p>Build a new folder for the project, add a <a href="http://docs.python-guide.org/en/latest/dev/virtualenvs/">virtual environment</a> and install <a href="http://flask.pocoo.org/">Flask</a>.</p>
@@ -103,7 +103,7 @@ unzip swagger-editor.zip
 </pre></div>
 
 
-<p>The following python script is all that is needed for a backend.  Swagger editor only does a GET when it start, and a PUT every time the spec file is modified.</p>
+<p>The following python script is all that is needed for a backend.  Swagger editor only does a GET when it starts, and a PUT every time the spec file is modified.</p>
 <p>Create <code>backend.py</code>:</p>
 <div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
 
@@ -210,7 +210,8 @@ unzip swagger-editor.zip
 </pre></div>
 
 
-<h3>Convert the specification to code using <a href="https://github.com/swagger-api/swagger-codegen">swagger codegen</a></h3>
+<h3>Convert the specification to code</h3>
+<p>using <a href="https://github.com/swagger-api/swagger-codegen">swagger codegen</a></p>
 <p>The conversion can be done easily using either the online <a href="http://generator.swagger.io/">swagger codegen api</a> or a local <a href="https://hub.docker.com/r/jimschubert/swagger-codegen-cli/">docker container</a></p>
 <h4>Generate using the online API</h4>
 <p>In order to us the online API, a few dependancies need to be installed.</p>
@@ -363,6 +364,8 @@ rm -rf python-flask-server
 
 <p>or using the swagger editor or UI built into your project:</p>
 <p>http://localhost:8080/api/v1/ui/</p>
+<h3>Congratulations</h3>
+<p>You just wrote your first REST API.</p>
   </div>
 </article>
     </div>

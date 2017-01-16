@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - APIs, python</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/apis-python.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-16T13:18:37-08:00</updated><entry><title>Zero to API in 4 minutes</title><link href="https://cidrblock.github.io/zero-to-api-in-4-minutes.html" rel="alternate"></link><published>2017-01-16T13:18:37-08:00</published><updated>2017-01-16T13:18:37-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-16:/zero-to-api-in-4-minutes.html</id><summary type="html">&lt;p&gt;Build an design-first API in python with swagger in four minutes.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Are you are a network engineer and spend most of your time doing service delivery, instead of network engineering, architecture, and automation?  One way to eliminate the &lt;a href="https://www.safaribooksonline.com/library/view/site-reliability-engineering/9781491929117/ch05.html"&gt;toil&lt;/a&gt; might be to expose your services as APIs so your customers can consume them. Ansible and python are popular tools for network automation.  Using YAML and python a simple design-first API can be written will little to no code.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - APIs, python</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/apis-python.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-16T13:18:37-08:00</updated><entry><title>Zero to API in 4 minutes</title><link href="https://cidrblock.github.io/zero-to-api-in-4-minutes.html" rel="alternate"></link><published>2017-01-16T13:18:37-08:00</published><updated>2017-01-16T13:18:37-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-16:/zero-to-api-in-4-minutes.html</id><summary type="html">&lt;p&gt;Build an design-first API in python with swagger in four minutes.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Are you are a network engineer and spend most of your time doing service delivery, instead of network engineering, architecture, and automation?  One way to eliminate the &lt;a href="https://www.safaribooksonline.com/library/view/site-reliability-engineering/9781491929117/ch05.html"&gt;toil&lt;/a&gt; might be to expose your services as APIs so your customers can consume them, self-service and programatically. Ansible and python are popular tools for network automation.  Using familiar tools, YAML and python, a simple design-first API can be written will little to no code.&lt;/p&gt;
 &lt;p&gt;This tutorial should take no more than a few minutes to work through and results in a documented, usable API in a format your application devops team should be ready to consume.&lt;/p&gt;
 &lt;h2&gt;Getting started&lt;/h2&gt;
 &lt;p&gt;Build a new folder for the project, add a &lt;a href="http://docs.python-guide.org/en/latest/dev/virtualenvs/"&gt;virtual environment&lt;/a&gt; and install &lt;a href="http://flask.pocoo.org/"&gt;Flask&lt;/a&gt;.&lt;/p&gt;
@@ -35,7 +35,7 @@ unzip swagger-editor.zip
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;The following python script is all that is needed for a backend.  Swagger editor only does a GET when it start, and a PUT every time the spec file is modified.&lt;/p&gt;
+&lt;p&gt;The following python script is all that is needed for a backend.  Swagger editor only does a GET when it starts, and a PUT every time the spec file is modified.&lt;/p&gt;
 &lt;p&gt;Create &lt;code&gt;backend.py&lt;/code&gt;:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="ch"&gt;#!/usr/bin/env python&lt;/span&gt;
 
@@ -142,7 +142,8 @@ unzip swagger-editor.zip
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;h3&gt;Convert the specification to code using &lt;a href="https://github.com/swagger-api/swagger-codegen"&gt;swagger codegen&lt;/a&gt;&lt;/h3&gt;
+&lt;h3&gt;Convert the specification to code&lt;/h3&gt;
+&lt;p&gt;using &lt;a href="https://github.com/swagger-api/swagger-codegen"&gt;swagger codegen&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;The conversion can be done easily using either the online &lt;a href="http://generator.swagger.io/"&gt;swagger codegen api&lt;/a&gt; or a local &lt;a href="https://hub.docker.com/r/jimschubert/swagger-codegen-cli/"&gt;docker container&lt;/a&gt;&lt;/p&gt;
 &lt;h4&gt;Generate using the online API&lt;/h4&gt;
 &lt;p&gt;In order to us the online API, a few dependancies need to be installed.&lt;/p&gt;
@@ -294,4 +295,6 @@ rm -rf python-flask-server
 
 
 &lt;p&gt;or using the swagger editor or UI built into your project:&lt;/p&gt;
-&lt;p&gt;http://localhost:8080/api/v1/ui/&lt;/p&gt;</content><category term="python"></category><category term="netdevops"></category></entry></feed>
+&lt;p&gt;http://localhost:8080/api/v1/ui/&lt;/p&gt;
+&lt;h3&gt;Congratulations&lt;/h3&gt;
+&lt;p&gt;You just wrote your first REST API.&lt;/p&gt;</content><category term="python"></category><category term="netdevops"></category></entry></feed>
