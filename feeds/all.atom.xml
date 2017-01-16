@@ -24,8 +24,8 @@ unzip swagger-editor.zip
 
 &lt;h2&gt;Build a backend for swagger.&lt;/h2&gt;
 &lt;p&gt;Two small changes need to be made to swagger-editor.&lt;/p&gt;
-&lt;p&gt;1) Enable backend saving, so files can be saved the the hd
-2) Set the default format to yaml.&lt;/p&gt;
+&lt;p&gt;1) Enable backend saving, so files can be saved the local file system.&lt;/p&gt;
+&lt;p&gt;2) Set the default format to yaml.&lt;/p&gt;
 &lt;p&gt;Make the following changes to the &lt;code&gt;swagger-editor/config/defaults.json&lt;/code&gt; file:&lt;/p&gt;
 &lt;p&gt;Swagger editor doesn't ship with a backend for saving files.  To enable backend saving modify the &lt;code&gt;swagger-editor/config&lt;/code&gt;&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;useBackendForStorage&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true,&lt;/span&gt;
