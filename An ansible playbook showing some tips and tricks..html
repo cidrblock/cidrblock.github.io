@@ -103,27 +103,81 @@
 </ul>
 <p>Here's a few links to the interesting snippets:</p>
 <p>The custom OS determination filter:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py]
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py">filter_plugins/determine_os.py</a>
 and it in use:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14]</p>
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14">roles/metadata/tasks/main.yml</a></p>
 <p>The new 'get_section' module that only returns interfaces that already have DHCP helpers:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py]
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py">library/get_section.py</a>
 and it in use:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml]</p>
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml">roles/get_interfaces/tasks/main.yml</a></p>
 <p>The change log defined for each device:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7]
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7">group_vars/all/vars.yml</a>
 the change log being added to:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9]
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9">roles/add_helpers/tasks/ios_interface.yml</a>
 and the report:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml]</p>
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml">roles/report/tasks/main.yml</a></p>
 <p>The "save config" tasks:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml]
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml">roles/save_config/handlers/main.yml</a>
 that has to be a dependency in other roles:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml]
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml">roles/add_helpers/meta/main.yml</a>
 and get flagged when there is a change:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9]</p>
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9">roles/add_helpers/tasks/ios_interface.yml</a></p>
 <p>Use variables in the task names for better output:
-[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2]</p>
+<a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2">roles/add_helpers/tasks/ios_interface.yml</a></p>
+<p>The directory structure follows the <a href="http://docs.ansible.com/ansible/playbooks_best_practices.html#directory-layout">Ansible best practises</a>:</p>
+<div class="highlight"><pre><span></span>├── README.md
+├── ansible.cfg
+├── callback_plugins
+├── filter_plugins
+│   ├── determine_os.py
+│   └── determine_os.pyc
+├── group_vars
+│   └── all
+│       └── vars.yml
+├── host_vars
+├── inventory.txt
+├── library
+│   └── get_section.py
+├── roles
+│   ├── add_helpers
+│   │   ├── meta
+│   │   │   └── main.yml
+│   │   └── tasks
+│   │       ├── ios.yml
+│   │       ├── ios_interface.yml
+│   │       ├── main.yml
+│   │       ├── nxos.yml
+│   │       └── nxos_interface.yml
+│   ├── get_interfaces
+│   │   └── tasks
+│   │       └── main.yml
+│   ├── metadata
+│   │   └── tasks
+│   │       └── main.yml
+│   ├── report
+│   │   └── tasks
+│   │       └── main.yml
+│   ├── retrieve_running
+│   │   ├── README.md
+│   │   ├── meta
+│   │   │   └── main.yml
+│   │   ├── tasks
+│   │   │   ├── asa.yml
+│   │   │   ├── default.yml
+│   │   │   ├── fwsm.yml
+│   │   │   ├── ios.yml
+│   │   │   ├── iosxe.yml
+│   │   │   ├── main.yml
+│   │   │   └── nxos.yml
+│   │   └── vars
+│   │       └── main.yml
+│   └── save_config
+│       └── handlers
+│           └── main.yml
+└── site.yml
+</pre></div>
+
+
 <p>The final site.yml file glues it all together:</p>
 <ul>
 <li>Get the metadata, determine the OS</li>
