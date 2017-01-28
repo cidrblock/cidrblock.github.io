@@ -23,7 +23,7 @@
 &lt;p&gt;A technique that keeps a running log of actual or proposed changes throughout the entire playbook, and produces a change log at the end.  This helps in the ITSM change process.&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;A notify/handler that only saves the configuration once at the end of the playbook if a device was changes.&lt;/p&gt;
+&lt;p&gt;A notify/handler that only saves the configuration once at the end of the playbook if a device was changed.&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;OS specific tasks and files, "do this is it is nxos, do this if it is ios"&lt;/p&gt;
