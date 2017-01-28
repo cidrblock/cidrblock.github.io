@@ -20,7 +20,7 @@
 &lt;p&gt;A custom module that wraps &lt;a href="http://www.pennington.net/py/ciscoconfparse/"&gt;ciscoconfparse&lt;/a&gt; to get specific sections out of a full running configuration.&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;A technique that keeps a running log of actual or proposed changed throughout the entire playbook, and produces a change long at the end.  This helps in the ITSM change process.&lt;/p&gt;
+&lt;p&gt;A technique that keeps a running log of actual or proposed changes throughout the entire playbook, and produces a change log at the end.  This helps in the ITSM change process.&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;A notify/handler that only saves the configuration once at the end of the playbook if a device was changes.&lt;/p&gt;
