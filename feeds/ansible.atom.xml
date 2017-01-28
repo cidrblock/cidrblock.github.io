@@ -8,7 +8,7 @@
 &lt;p&gt;&lt;em&gt;I could make a list...do I need to?&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;No.  We'll figure it out.&lt;/p&gt;
 &lt;hr&gt;
-&lt;p&gt;That was basically how the conversation played out.  The request was simple, add a DHCP where DHCP helpers exist, on every device.&lt;/p&gt;
+&lt;p&gt;That was basically how the conversation played out.  The request was simple, add a DHCP helper where DHCP helpers exist, on every device.&lt;/p&gt;
 &lt;p&gt;This is part of the brownfield conversion process.  The devices are still their own source of truth and are not fully managed by Ansible. There just isn't time every time to do it 100% right, but that doesn't mean we won't do it using Ansible. The steps down the road can be small as long as they are in the right direction.&lt;/p&gt;
 &lt;p&gt;Here's the final playbook that satisfied the request.  Posted here, because it uses some techniques and Ansible capabilities that aren't always apparent to new Ansible developers.&lt;/p&gt;
 &lt;p&gt;These include:&lt;/p&gt;
