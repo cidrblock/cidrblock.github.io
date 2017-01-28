@@ -33,29 +33,27 @@
 &lt;p&gt;small, reusable roles that can be copied to a different playbook if needed, high reusability.&lt;/p&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Here's a few links to the interesting snippets:&lt;/p&gt;
-&lt;p&gt;The custom OS determination filter:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py"&gt;filter_plugins/determine_os.py&lt;/a&gt;
-and it in use:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14"&gt;roles/metadata/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;The new 'get_section' module that only returns interfaces that already have DHCP helpers:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py"&gt;library/get_section.py&lt;/a&gt;
-and it in use:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml"&gt;roles/get_interfaces/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;The change log defined for each device:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7"&gt;group_vars/all/vars.yml&lt;/a&gt;
-the change log being added to:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;
-and the report:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml"&gt;roles/report/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;The "save config" tasks:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml"&gt;roles/save_config/handlers/main.yml&lt;/a&gt;
-that has to be a dependency in other roles:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml"&gt;roles/add_helpers/meta/main.yml&lt;/a&gt;
-and get flagged when there is a change:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Use variables in the task names for better output:
-&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The site.yml file glues it all together, a unique role for each of the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Get the metadata, determine the OS&lt;/li&gt;
+&lt;li&gt;Go get the running configuration&lt;/li&gt;
+&lt;li&gt;Get all the interfaces that have a helper&lt;/li&gt;
+&lt;li&gt;Add a helper to each interface&lt;/li&gt;
+&lt;li&gt;Report on what did or needs to change&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;- name: run playbook
+    hosts: all
+    connection: local
+    gather_facts: no
+    roles:
+      - metadata
+      - retrieve_running
+      - get_interfaces
+      - add_helpers
+      - report
+&lt;/pre&gt;&lt;/div&gt;
+
+
 &lt;p&gt;The directory structure follows the &lt;a href="http://docs.ansible.com/ansible/playbooks_best_practices.html#directory-layout"&gt;Ansible best practises&lt;/a&gt;:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;├── README.md
 ├── ansible.cfg
@@ -90,19 +88,16 @@ and get flagged when there is a change:
 │   │   └── tasks
 │   │       └── main.yml
 │   ├── retrieve_running
-│   │   ├── README.md
 │   │   ├── meta
 │   │   │   └── main.yml
-│   │   ├── tasks
-│   │   │   ├── asa.yml
-│   │   │   ├── default.yml
-│   │   │   ├── fwsm.yml
-│   │   │   ├── ios.yml
-│   │   │   ├── iosxe.yml
-│   │   │   ├── main.yml
-│   │   │   └── nxos.yml
-│   │   └── vars
-│   │       └── main.yml
+│   │   └── tasks
+│   │       ├── asa.yml
+│   │       ├── default.yml
+│   │       ├── fwsm.yml
+│   │       ├── ios.yml
+│   │       ├── iosxe.yml
+│   │       ├── main.yml
+│   │       └── nxos.yml
 │   └── save_config
 │       └── handlers
 │           └── main.yml
@@ -110,27 +105,29 @@ and get flagged when there is a change:
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;The final site.yml file glues it all together:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Get the metadata, determine the OS&lt;/li&gt;
-&lt;li&gt;Go get the running configuration&lt;/li&gt;
-&lt;li&gt;Get all the interfaces that have a helper&lt;/li&gt;
-&lt;li&gt;Add a helper to each interface&lt;/li&gt;
-&lt;li&gt;Report on what did or needs to change&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;- name: run playbook
-    hosts: all
-    connection: local
-    gather_facts: no
-    roles:
-      - metadata
-      - retrieve_running
-      - get_interfaces
-      - add_helpers
-      - report
-&lt;/pre&gt;&lt;/div&gt;
-
-
+&lt;p&gt;Here's a few links to the interesting snippets:&lt;/p&gt;
+&lt;p&gt;The custom OS determination filter:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py"&gt;filter_plugins/determine_os.py&lt;/a&gt;
+and it in use:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14"&gt;roles/metadata/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The new 'get_section' module that only returns interfaces that already have DHCP helpers:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py"&gt;library/get_section.py&lt;/a&gt;
+and it in use:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml"&gt;roles/get_interfaces/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The change log defined for each device:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7"&gt;group_vars/all/vars.yml&lt;/a&gt;
+the change log being added to:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;
+and the report:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml"&gt;roles/report/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The "save config" tasks:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml"&gt;roles/save_config/handlers/main.yml&lt;/a&gt;
+that has to be a dependency in other roles:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml"&gt;roles/add_helpers/meta/main.yml&lt;/a&gt;
+and get flagged when there is a change:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Use variables in the task names for better output:
+&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;This is what it looks like when it runs:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;$ansible-playbook -i inventory.txt site.yml --check&lt;/span&gt;
 
