@@ -26,7 +26,7 @@
 &lt;p&gt;A notify/handler that only saves the configuration once at the end of the playbook if a device was changed.&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
-&lt;p&gt;OS specific tasks and files, "do this is it is nxos, do this if it is ios"&lt;/p&gt;
+&lt;p&gt;OS specific tasks and files, "do this if it is nxos, do this if it is ios"&lt;/p&gt;
 &lt;/li&gt;
 &lt;li&gt;
 &lt;p&gt;loops, for every interface do this...&lt;/p&gt;
