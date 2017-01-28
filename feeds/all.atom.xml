@@ -107,30 +107,30 @@
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Here's a few links to the interesting snippets:&lt;/p&gt;
-&lt;p&gt;The custom OS determination filter:&lt;/p&gt;
+&lt;h4&gt;Here's a few links to the interesting snippets:&lt;/h4&gt;
+&lt;p&gt;&lt;strong&gt;The custom OS determination filter:&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py"&gt;filter_plugins/determine_os.py&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;and it in use:&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14"&gt;roles/metadata/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;The new 'get_section' module that only returns interfaces that already have DHCP helpers:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py"&gt;library/get_section.py&lt;/a&gt;
-and it in use:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The new 'get_section' module that only returns interfaces that already have DHCP helpers:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py"&gt;library/get_section.py&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;and it in use:&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml"&gt;roles/get_interfaces/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;The change log defined for each device:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7"&gt;group_vars/all/vars.yml&lt;/a&gt;
-the change log being added to:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;
-and the report:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml"&gt;roles/report/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;The "save config" tasks:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml"&gt;roles/save_config/handlers/main.yml&lt;/a&gt;
-that has to be a dependency in other roles:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml"&gt;roles/add_helpers/meta/main.yml&lt;/a&gt;
-and get flagged when there is a change:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The change log defined for each device:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7"&gt;group_vars/all/vars.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;the change log being added to:&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Use variables in the task names for better output:&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;and the report:&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml"&gt;roles/report/tasks/main.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The "save config" tasks:&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml"&gt;roles/save_config/handlers/main.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;that has to be a dependency in other roles:&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml"&gt;roles/add_helpers/meta/main.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;and gets flagged when there is a change:&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Use variables in the task names for better output:&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2"&gt;roles/add_helpers/tasks/ios_interface.yml&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;This is what it looks like when it runs:&lt;/p&gt;
+&lt;h4&gt;This is what it looks like when it runs:&lt;/h4&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;$ansible-playbook -i inventory.txt site.yml --check&lt;/span&gt;
 
 &lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY [run playbook] ************************************************************&lt;/span&gt;
