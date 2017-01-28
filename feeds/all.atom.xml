@@ -1,5 +1,286 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-28T12:21:30-08:00</updated><entry><title></title><link href="https://cidrblock.github.io/.html" rel="alternate"></link><published>2017-01-28T12:21:30-08:00</published><updated>2017-01-28T12:21:30-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-28:/.html</id><summary type="html"></summary><content type="html"></content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Section snipping module for Ansible</title><link href="https://cidrblock.github.io/section-snipping-module-for-ansible.html" rel="alternate"></link><published>2017-01-23T15:21:03-08:00</published><updated>2017-01-23T15:21:03-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-23:/section-snipping-module-for-ansible.html</id><summary type="html">&lt;p&gt;Need a section snipped from a config?  Place this in your library and:&lt;/p&gt;</summary><content type="html">&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Show matching sections&lt;/span&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-28T12:21:30-08:00</updated><entry><title>Add a dhcp helper address to where helpers exist</title><link href="https://cidrblock.github.io/An%20ansible%20playbook%20showing%20some%20tips%20and%20tricks..html" rel="alternate"></link><published>2017-01-28T12:21:30-08:00</published><updated>2017-01-28T12:21:30-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-28:/An ansible playbook showing some tips and tricks..html</id><summary type="html">&lt;p&gt;An ansible playbook showing some tips and tricks.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;em&gt;How do I add a DHCP helper address to an interface?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;That should be easy, do you know which devices and interfaces?&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;It needs to be all devices and all interfaces that already have a helper address.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;So you don't have a list maintained outside of the devices?&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;I could make a list from IPAM, but this needs to happen now, I can do the clean-up later.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Do you know the OS of the devices?&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;I could make a list...do I need to?&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;No.  We'll figure it out.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;That was basically how the conversation played out.  The request was simple, add a DHCP where DHCP helpers exist, on every device.&lt;/p&gt;
+&lt;p&gt;This is part of the brownfield conversion process.  The devices are still their own source of truth and are not fully managed by Ansible. There just isn't time every time to do it 100% right, but that doesn't mean we won't do it Ansible. The steps down the road can be small as long as they are in the right direction.&lt;/p&gt;
+&lt;p&gt;Here's the final playbook that satisfied the request.  Posted here, because it uses some techniques and ansible capabilities that aren't always apparent to new ansible developers.&lt;/p&gt;
+&lt;p&gt;These include:
+- A custom jinja filter to determine the OS of the network device.
+- A custom module that wraps &lt;a href="http://www.pennington.net/py/ciscoconfparse/"&gt;ciscoconfparse&lt;/a&gt; to get specific sections out of a full running configuration.
+- A technique that keeps a running log of actual or proposed changed throughout the entire playbook, and produces a change long at the end.  This helps in the ITSM change process.
+- A notify/handler that only saves the configuration once at the end of the playbook if a device was changes.
+- OS specific tasks and files, "do this is it is nxos, do this if it is ios"
+- loops, for every interface do this...
+- small, reusable roles that can be copied to a different playbook if needed, high reusability.&lt;/p&gt;
+&lt;p&gt;Here's a few links to the interesting snippets:&lt;/p&gt;
+&lt;p&gt;The custom OS determination filter:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py
+and it in use:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14&lt;/p&gt;
+&lt;p&gt;The new 'get_section' module that only returns interfaces that already have DHCP helpers:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py
+and it in use:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml&lt;/p&gt;
+&lt;p&gt;The change log defined for each device:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7
+the change log being added to:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9
+and the report:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml&lt;/p&gt;
+&lt;p&gt;The "save config" tasks:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml
+that has to be a dependency in other roles:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml
+and get flagged when there is a change:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9&lt;/p&gt;
+&lt;p&gt;Use variables in the task names for better output:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2&lt;/p&gt;
+&lt;p&gt;The final site.yml file glues it all together:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Get the metadata, determine the OS&lt;/li&gt;
+&lt;li&gt;Go get the running configuration&lt;/li&gt;
+&lt;li&gt;Get all the interfaces that have a helper&lt;/li&gt;
+&lt;li&gt;Add a helper to each interface&lt;/li&gt;
+&lt;li&gt;Report on what did or needs to change&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;- name: run playbook
+    hosts: all
+    connection: local
+    gather_facts: no
+    roles:
+      - metadata
+      - retrieve_running
+      - get_interfaces
+      - add_helpers
+      - report
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is what it looks like when it runs:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;$ansible-playbook -i inventory.txt site.yml --check&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY [run playbook] ************************************************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [metadata&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Run show version] *********************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [metadata&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set fact for os and ssh_accessible] ***************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [retrieve_running&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Include OS files for config retrieval] ****************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/retrieve_running/tasks/ios.yml for router5.company.net, router3.company.net, router1.company.net, router4.company.net, router2.company.net&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [retrieve_running&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Retrieve configuration for IOS] ***********************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [retrieve_running&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set the running configuration as a fact] **************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [get_interfaces&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Get interfaces with helper_keyword] *********************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Include OS files for interface helper addition] ************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios.yml for router4.company.net, router3.company.net, router2.company.net, router1.company.net, router5.company.net&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Include files for interface helper addition on ios] ********&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router1.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router1.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router2.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router5.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/add_helpers/tasks/ios_interface.yml for router5.company.net&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router1.company.net GigabitEthernet0/1.200] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router1.company.net GigabitEthernet0/1.800] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router4.company.net GigabitEthernet0/1.240] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router4.company.net GigabitEthernet0/1.250] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router4.company.net GigabitEthernet0/1.406] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router4.company.net GigabitEthernet0/1.840] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router3.company.net GigabitEthernet0/1.240] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router3.company.net GigabitEthernet0/1.250] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router3.company.net GigabitEthernet0/1.406] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router3.company.net GigabitEthernet0/1.840] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router2.company.net Vlan10] *************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router5.company.net GigabitEthernet0/1.200] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add helper&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;router5.company.net GigabitEthernet0/1.800] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [add_helpers&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (ios)] *******************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [report&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Show config changes for device] *********************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; {&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.240&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.250&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.406&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.840&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; {&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.200&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.800&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; {&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.240&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.250&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.406&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.840&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; {&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.200&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;GigabitEthernet0/1.800&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; {&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;add_helpers&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;interface&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;Vlan10&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;helper-address&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;10.5.5.5&amp;quot;&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;RUNNING HANDLER [save_config&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ios_save_config] ********************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router1.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+ &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;WARNING&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;only show commands are supported when using check mode, not executing `write memory`&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router2.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router3.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router4.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router5.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY RECAP *********************************************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router1.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=15   changed=2    unreachable=0    failed=0&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router4.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=21   changed=4    unreachable=0    failed=0&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router3.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=21   changed=4    unreachable=0    failed=0&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router5.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=15   changed=2    unreachable=0    failed=0&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router2.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=12   changed=1    unreachable=0    failed=0&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;root@506b0a2ec1b2:/working#&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Section snipping module for Ansible</title><link href="https://cidrblock.github.io/section-snipping-module-for-ansible.html" rel="alternate"></link><published>2017-01-23T15:21:03-08:00</published><updated>2017-01-23T15:21:03-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-23:/section-snipping-module-for-ansible.html</id><summary type="html">&lt;p&gt;Need a section snipped from a config?  Place this in your library and:&lt;/p&gt;</summary><content type="html">&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Show matching sections&lt;/span&gt;
   &lt;span class="l l-Scalar l-Scalar-Plain"&gt;get_section&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
     &lt;span class="l l-Scalar l-Scalar-Plain"&gt;lines&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;{{&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;running_config&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;}}&amp;quot;&lt;/span&gt;
     &lt;span class="l l-Scalar l-Scalar-Plain"&gt;match&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;^ip&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;access-list&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;standard&amp;quot;&lt;/span&gt;

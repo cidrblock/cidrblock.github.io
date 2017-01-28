@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags always come first -->
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Add a dhcp helper address to where helpers exist | network | automation
+</title>
+  <link rel="canonical" href="https://cidrblock.github.io/An ansible playbook showing some tips and tricks..html">
+
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/all.atom.xml" title="Full Atom Feed">
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/ansible.atom.xml" title="Categories Atom Feed">
+
+
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/pygments/default.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/style.css">
+  <link href="https://fonts.googleapis.com/css?family=Anonymous+Pro" rel="stylesheet">
+
+
+<meta name="description" content="An ansible playbook showing some tips and tricks.">
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1 class="title"><a href="https://cidrblock.github.io">network | automation</a></h1>
+          <ul class="list-inline">
+            <li class="list-inline-item"><a href="http://drawthe.net/" target="_blank">[drawthe.net]</a></li>
+            <li class="list-inline-item"><a href="https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwiKscj5lYPRAhUT4GMKHdAsBM4QFgghMAE&url=https%3A%2F%2Ftwitter.com%2Fjedelman8%2Fstatus%2F663808419783045120&usg=AFQjCNGWhcMLiY_-O6QZwG82IxyIMHqXoA" target="_blank">[#networktocode]</a></li>
+            <li class="list-inline-item"><a href="https://github.com/cidrblock/cidrblock.github.io-src/issues" target="_blank">[comments/issues]</a></li>
+            <li class="list-inline-item"><a href="network-automation-and-devops-resources.html" target="_blank">[netdevops resources]</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="container">
+      <h1>Add a dhcp helper address to where helpers exist
+</h1>
+      <hr>
+<article class="article">
+  <header>
+    <ul class="list-inline">
+      <li class="list-inline-item text-muted" title="2017-01-28T12:21:30.904623-08:00">
+        <i class="fa fa-clock-o"></i>
+        Sat 28 January 2017
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-folder-open-o"></i>
+        <a href="https://cidrblock.github.io/category/ansible.html">ansible</a>
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-user-o"></i>
+        <a href="https://cidrblock.github.io/author/bradley-a-thornton.html">Bradley A. Thornton</a>      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-files-o"></i>
+        <a href="https://cidrblock.github.io/tag/ansible.html">#ansible</a>,         <a href="https://cidrblock.github.io/tag/netdevops.html">#netdevops</a>      </li>
+    </ul>
+  </header>
+  <div class="content">
+    <p><em>How do I add a DHCP helper address to an interface?</em></p>
+<p>That should be easy, do you know which devices and interfaces?</p>
+<p><em>It needs to be all devices and all interfaces that already have a helper address.</em></p>
+<p>So you don't have a list maintained outside of the devices?</p>
+<p><em>I could make a list from IPAM, but this needs to happen now, I can do the clean-up later.</em></p>
+<p>Do you know the OS of the devices?</p>
+<p><em>I could make a list...do I need to?</em></p>
+<p>No.  We'll figure it out.</p>
+<hr>
+<p>That was basically how the conversation played out.  The request was simple, add a DHCP where DHCP helpers exist, on every device.</p>
+<p>This is part of the brownfield conversion process.  The devices are still their own source of truth and are not fully managed by Ansible. There just isn't time every time to do it 100% right, but that doesn't mean we won't do it Ansible. The steps down the road can be small as long as they are in the right direction.</p>
+<p>Here's the final playbook that satisfied the request.  Posted here, because it uses some techniques and ansible capabilities that aren't always apparent to new ansible developers.</p>
+<p>These include:
+- A custom jinja filter to determine the OS of the network device.
+- A custom module that wraps <a href="http://www.pennington.net/py/ciscoconfparse/">ciscoconfparse</a> to get specific sections out of a full running configuration.
+- A technique that keeps a running log of actual or proposed changed throughout the entire playbook, and produces a change long at the end.  This helps in the ITSM change process.
+- A notify/handler that only saves the configuration once at the end of the playbook if a device was changes.
+- OS specific tasks and files, "do this is it is nxos, do this if it is ios"
+- loops, for every interface do this...
+- small, reusable roles that can be copied to a different playbook if needed, high reusability.</p>
+<p>Here's a few links to the interesting snippets:</p>
+<p>The custom OS determination filter:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py
+and it in use:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14</p>
+<p>The new 'get_section' module that only returns interfaces that already have DHCP helpers:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py
+and it in use:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml</p>
+<p>The change log defined for each device:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7
+the change log being added to:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9
+and the report:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml</p>
+<p>The "save config" tasks:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml
+that has to be a dependency in other roles:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml
+and get flagged when there is a change:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9</p>
+<p>Use variables in the task names for better output:
+https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2</p>
+<p>The final site.yml file glues it all together:</p>
+<ul>
+<li>Get the metadata, determine the OS</li>
+<li>Go get the running configuration</li>
+<li>Get all the interfaces that have a helper</li>
+<li>Add a helper to each interface</li>
+<li>Report on what did or needs to change</li>
+</ul>
+<div class="highlight"><pre><span></span>- name: run playbook
+    hosts: all
+    connection: local
+    gather_facts: no
+    roles:
+      - metadata
+      - retrieve_running
+      - get_interfaces
+      - add_helpers
+      - report
+</pre></div>
+
+
+<p>This is what it looks like when it runs:</p>
+<div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">$ansible-playbook -i inventory.txt site.yml --check</span>
+
+<span class="l l-Scalar l-Scalar-Plain">PLAY [run playbook] ************************************************************</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [metadata</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Run show version] *********************************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [metadata</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Set fact for os and ssh_accessible] ***************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [retrieve_running</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Include OS files for config retrieval] ****************</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/retrieve_running/tasks/ios.yml for router5.company.net, router3.company.net, router1.company.net, router4.company.net, router2.company.net</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [retrieve_running</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Retrieve configuration for IOS] ***********************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [retrieve_running</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Set the running configuration as a fact] **************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [get_interfaces</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Get interfaces with helper_keyword] *********************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Include OS files for interface helper addition] ************</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios.yml for router4.company.net, router3.company.net, router2.company.net, router1.company.net, router5.company.net</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Include files for interface helper addition on ios] ********</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router1.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router1.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router4.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router3.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router2.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router5.company.net</span>
+<span class="l l-Scalar l-Scalar-Plain">included</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">/working/roles/add_helpers/tasks/ios_interface.yml for router5.company.net</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router1.company.net GigabitEthernet0/1.200] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router1.company.net GigabitEthernet0/1.800] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router4.company.net GigabitEthernet0/1.240] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router4.company.net GigabitEthernet0/1.250] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router4.company.net GigabitEthernet0/1.406] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router4.company.net GigabitEthernet0/1.840] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router3.company.net GigabitEthernet0/1.240] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router3.company.net GigabitEthernet0/1.250] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router3.company.net GigabitEthernet0/1.406] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router3.company.net GigabitEthernet0/1.840] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router2.company.net Vlan10] *************</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router5.company.net GigabitEthernet0/1.200] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Add helper</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">router5.company.net GigabitEthernet0/1.800] ***</span>
+<span class="l l-Scalar l-Scalar-Plain">changed</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [add_helpers</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Append changes to log (ios)] *******************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">TASK [report</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">Show config changes for device] *********************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span> <span class="l l-Scalar l-Scalar-Plain">=&gt; {</span>
+    <span class="l l-Scalar l-Scalar-Plain">&quot;msg&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.240&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.250&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.406&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.840&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span>
+    <span class="p p-Indicator">]</span>
+<span class="err">}</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span> <span class="l l-Scalar l-Scalar-Plain">=&gt; {</span>
+    <span class="l l-Scalar l-Scalar-Plain">&quot;msg&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.200&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.800&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span>
+    <span class="p p-Indicator">]</span>
+<span class="err">}</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span> <span class="l l-Scalar l-Scalar-Plain">=&gt; {</span>
+    <span class="l l-Scalar l-Scalar-Plain">&quot;msg&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.240&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.250&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.406&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.840&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span>
+    <span class="p p-Indicator">]</span>
+<span class="err">}</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span> <span class="l l-Scalar l-Scalar-Plain">=&gt; {</span>
+    <span class="l l-Scalar l-Scalar-Plain">&quot;msg&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.200&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">GigabitEthernet0/1.800&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span>
+    <span class="p p-Indicator">]</span>
+<span class="err">}</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span> <span class="l l-Scalar l-Scalar-Plain">=&gt; {</span>
+    <span class="l l-Scalar l-Scalar-Plain">&quot;msg&quot;</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span>
+        <span class="s">&quot;***</span><span class="nv"> </span><span class="s">ROLE:</span><span class="nv"> </span><span class="s">add_helpers</span><span class="nv"> </span><span class="s">***&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;interface</span><span class="nv"> </span><span class="s">Vlan10&quot;</span><span class="p p-Indicator">,</span>
+        <span class="s">&quot;ip</span><span class="nv"> </span><span class="s">helper-address</span><span class="nv"> </span><span class="s">10.5.5.5&quot;</span>
+    <span class="p p-Indicator">]</span>
+<span class="err">}</span>
+
+<span class="l l-Scalar l-Scalar-Plain">RUNNING HANDLER [save_config</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">ios_save_config] ********************************</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router1.company.net</span><span class="p p-Indicator">]</span>
+ <span class="p p-Indicator">[</span><span class="nv">WARNING</span><span class="p p-Indicator">]:</span> <span class="l l-Scalar l-Scalar-Plain">only show commands are supported when using check mode, not executing `write memory`</span>
+
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router2.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router3.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router4.company.net</span><span class="p p-Indicator">]</span>
+<span class="l l-Scalar l-Scalar-Plain">ok</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[</span><span class="nv">router5.company.net</span><span class="p p-Indicator">]</span>
+
+<span class="l l-Scalar l-Scalar-Plain">PLAY RECAP *********************************************************************</span>
+<span class="l l-Scalar l-Scalar-Plain">router1.company.net</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">ok=15   changed=2    unreachable=0    failed=0</span>
+<span class="l l-Scalar l-Scalar-Plain">router4.company.net</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">ok=21   changed=4    unreachable=0    failed=0</span>
+<span class="l l-Scalar l-Scalar-Plain">router3.company.net</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">ok=21   changed=4    unreachable=0    failed=0</span>
+<span class="l l-Scalar l-Scalar-Plain">router5.company.net</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">ok=15   changed=2    unreachable=0    failed=0</span>
+<span class="l l-Scalar l-Scalar-Plain">router2.company.net</span> <span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">ok=12   changed=1    unreachable=0    failed=0</span>
+
+<span class="l l-Scalar l-Scalar-Plain">root@506b0a2ec1b2:/working#</span>
+</pre></div>
+  </div>
+</article>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+       <ul class="col-sm-6 list-inline">
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/authors.html">Authors</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/archives.html">Archives</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/categories.html">Categories</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/tags.html">Tags</a></li>
+        </ul>
+        <p class="col-sm-6 text-sm-right text-muted">
+          Generated by <a href="https://github.com/getpelican/pelican" target="_blank">Pelican</a> / <a href="https://github.com/nairobilug/pelican-alchemy" target="_blank">&#x2728;</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
