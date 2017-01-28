@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-28T12:21:30-08:00</updated><entry><title>Add a dhcp helper address to where helpers exist</title><link href="https://cidrblock.github.io/An%20ansible%20playbook%20showing%20some%20tips%20and%20tricks..html" rel="alternate"></link><published>2017-01-28T12:21:30-08:00</published><updated>2017-01-28T12:21:30-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-28:/An ansible playbook showing some tips and tricks..html</id><summary type="html">&lt;p&gt;An ansible playbook showing some tips and tricks.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;em&gt;How do I add a DHCP helper address to an interface?&lt;/em&gt;&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-28T12:21:30-08:00</updated><entry><title>Add a dhcp helper address where helpers exist</title><link href="https://cidrblock.github.io/An%20ansible%20playbook%20showing%20some%20tips%20and%20tricks..html" rel="alternate"></link><published>2017-01-28T12:21:30-08:00</published><updated>2017-01-28T12:21:30-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-28:/An ansible playbook showing some tips and tricks..html</id><summary type="html">&lt;p&gt;An ansible playbook showing some tips and tricks.&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;em&gt;How do I add a DHCP helper address to an interface?&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;That should be easy, do you know which devices and interfaces?&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;It needs to be all devices and all interfaces that already have a helper address.&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;So you don't have a list maintained outside of the devices?&lt;/p&gt;
@@ -12,36 +12,50 @@
 &lt;p&gt;This is part of the brownfield conversion process.  The devices are still their own source of truth and are not fully managed by Ansible. There just isn't time every time to do it 100% right, but that doesn't mean we won't do it Ansible. The steps down the road can be small as long as they are in the right direction.&lt;/p&gt;
 &lt;p&gt;Here's the final playbook that satisfied the request.  Posted here, because it uses some techniques and ansible capabilities that aren't always apparent to new ansible developers.&lt;/p&gt;
 &lt;p&gt;These include:
-- A custom jinja filter to determine the OS of the network device.
-- A custom module that wraps &lt;a href="http://www.pennington.net/py/ciscoconfparse/"&gt;ciscoconfparse&lt;/a&gt; to get specific sections out of a full running configuration.
-- A technique that keeps a running log of actual or proposed changed throughout the entire playbook, and produces a change long at the end.  This helps in the ITSM change process.
-- A notify/handler that only saves the configuration once at the end of the playbook if a device was changes.
-- OS specific tasks and files, "do this is it is nxos, do this if it is ios"
-- loops, for every interface do this...
-- small, reusable roles that can be copied to a different playbook if needed, high reusability.&lt;/p&gt;
+- A custom jinja filter to determine the OS of the network device.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;A custom module that wraps &lt;a href="http://www.pennington.net/py/ciscoconfparse/"&gt;ciscoconfparse&lt;/a&gt; to get specific sections out of a full running configuration.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;A technique that keeps a running log of actual or proposed changed throughout the entire playbook, and produces a change long at the end.  This helps in the ITSM change process.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;A notify/handler that only saves the configuration once at the end of the playbook if a device was changes.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;OS specific tasks and files, "do this is it is nxos, do this if it is ios"&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;loops, for every interface do this...&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;small, reusable roles that can be copied to a different playbook if needed, high reusability.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;Here's a few links to the interesting snippets:&lt;/p&gt;
 &lt;p&gt;The custom OS determination filter:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/filter_plugins/determine_os.py]
 and it in use:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14&lt;/p&gt;
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/metadata/tasks/main.yml#L14]&lt;/p&gt;
 &lt;p&gt;The new 'get_section' module that only returns interfaces that already have DHCP helpers:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/library/get_section.py]
 and it in use:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml&lt;/p&gt;
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/get_interfaces/tasks/main.yml]&lt;/p&gt;
 &lt;p&gt;The change log defined for each device:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/group_vars/all/vars.yml#L7]
 the change log being added to:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9]
 and the report:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml&lt;/p&gt;
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/report/tasks/main.yml]&lt;/p&gt;
 &lt;p&gt;The "save config" tasks:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/save_config/handlers/main.yml]
 that has to be a dependency in other roles:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/meta/main.yml]
 and get flagged when there is a change:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9&lt;/p&gt;
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L9]&lt;/p&gt;
 &lt;p&gt;Use variables in the task names for better output:
-https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2&lt;/p&gt;
+[https://github.com/cidrblock/add_dhcp_helper_address/blob/master/roles/add_helpers/tasks/ios_interface.yml#L2]&lt;/p&gt;
 &lt;p&gt;The final site.yml file glues it all together:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Get the metadata, determine the OS&lt;/li&gt;
