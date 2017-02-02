@@ -1,5 +1,253 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-01-30T15:25:46-08:00</updated><entry><title>The first twenty interfaces.</title><link href="https://cidrblock.github.io/The%20first%20twenty%20interfaces.html" rel="alternate"></link><published>2017-01-30T15:25:46-08:00</published><updated>2017-01-30T15:25:46-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-30:/The first twenty interfaces.html</id><summary type="html"></summary><content type="html">&lt;p&gt;From &lt;a href="https://networktocode.slack.com/archives/ansible/p1485654659002727"&gt;#network_to_code&lt;/a&gt;:&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/all.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-02-02T14:33:39-08:00</updated><entry><title>Automated configuration and state collection using ansible for bigip.</title><link href="https://cidrblock.github.io/automated-configuration-and-state-collection-using-ansible-for-bigip.html" rel="alternate"></link><published>2017-02-02T14:33:39-08:00</published><updated>2017-02-02T14:33:39-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-02:/automated-configuration-and-state-collection-using-ansible-for-bigip.html</id><summary type="html"></summary><content type="html">&lt;h3&gt;Playbook&lt;/h3&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/f5_health_check"&gt;HERE&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Clone this repo, delete the .git folder and push as a new repository to your internal or private git/github installation.&lt;/p&gt;
+&lt;h3&gt;Overview&lt;/h3&gt;
+&lt;p&gt;Here is an Ansible playbook repo that collects configuration and state information from an F5, and writes these stats to individual files.&lt;/p&gt;
+&lt;p&gt;The stats are kept in a directory:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;stats/{{ inventory_hostname}}/{{ stat_name }}&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;The playbook checks itself into github as well so the stats are are subject to version control.&lt;/p&gt;
+&lt;p&gt;This can be run periodically or before and after maintenance to see changes in either the configuration or running state of the bigip.&lt;/p&gt;
+&lt;h3&gt;Usage&lt;/h3&gt;
+&lt;p&gt;Modify the inventory.txt file as needed.&lt;/p&gt;
+&lt;p&gt;The following environment variables need to be set and reflect your credentials:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;export ANSIBLE_F5_USERNAME=xxxx
+export ANSIBLE_F5_PASSWORD=&amp;#39;xxxx&amp;#39;
+export ANSIBLE_GIT_USERNAME=xxxx
+export ANSIBLE_GIT_EMAIL=me@company.com
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Run the playbook:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;ansible-playbook -i inventory.txt site.yml
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When the playbook is ready to commit, the user will be prompted for their github credentials:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;TASK&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nl"&gt;git_commit&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;push&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;*******************************************************&lt;/span&gt;
+&lt;span class="n"&gt;Username&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="nl"&gt;https&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="c1"&gt;//github.company.com&amp;#39;: me&lt;/span&gt;
+&lt;span class="n"&gt;Password&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="err"&gt;&amp;#39;&lt;/span&gt;&lt;span class="nl"&gt;https&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="c1"&gt;//me@github.company.com&amp;#39;:&lt;/span&gt;
+&lt;span class="nl"&gt;ok&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;bigip&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;company&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;com&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;localhost&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Example&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;➜  /working git:&lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; ansible-playbook -i inventory.txt site.yml
+
+PLAY &lt;span class="o"&gt;[&lt;/span&gt;all&lt;span class="o"&gt;]&lt;/span&gt; *********************************************************************
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Ensures bigip.company.com directory exists&lt;span class="o"&gt;]&lt;/span&gt; **
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collect a single stat and write to a file&lt;span class="o"&gt;]&lt;/span&gt; ************
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml &lt;span class="k"&gt;for&lt;/span&gt; bigip.company.com
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;address_class&lt;span class="o"&gt;)]&lt;/span&gt; *************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;address_class&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ********
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;address_class&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *********
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;certificate&lt;span class="o"&gt;)]&lt;/span&gt; ***************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;certificate&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; **********
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;certificate&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ***********
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;client_ssl_profile&lt;span class="o"&gt;)]&lt;/span&gt; ********
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;client_ssl_profile&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ***
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;client_ssl_profile&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ****
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;device&lt;span class="o"&gt;)]&lt;/span&gt; ********************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;device&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ***************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;device&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ****************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;device_group&lt;span class="o"&gt;)]&lt;/span&gt; **************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;device_group&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *********
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;device_group&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; **********
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;interface&lt;span class="o"&gt;)]&lt;/span&gt; *****************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;interface&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;interface&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;key&lt;span class="o"&gt;)]&lt;/span&gt; ***********************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;key&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ******************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;key&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *******************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;node&lt;span class="o"&gt;)]&lt;/span&gt; **********************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;node&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *****************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;node&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ******************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;pool&lt;span class="o"&gt;)]&lt;/span&gt; **********************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;pool&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *****************
+changed: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;pool&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ******************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;provision&lt;span class="o"&gt;)]&lt;/span&gt; *****************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;provision&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;provision&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;rule&lt;span class="o"&gt;)]&lt;/span&gt; **********************
+fatal: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;: FAILED! &lt;span class="o"&gt;=&lt;/span&gt;&amp;gt; &lt;span class="o"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;changed&amp;quot;&lt;/span&gt;: false, &lt;span class="s2"&gt;&amp;quot;failed&amp;quot;&lt;/span&gt;: true, &lt;span class="s2"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;: &lt;span class="s2"&gt;&amp;quot;received exception: list index out of range\ntraceback: Traceback (most recent call last):\n  File \&amp;quot;/tmp/ansible_Uh97Oa/ansible_module_bigip_facts.py\&amp;quot;, line 1687, in main\n    facts[&amp;#39;rule&amp;#39;] = generate_rule_dict(f5, regex)\n  File \&amp;quot;/tmp/ansible_Uh97Oa/ansible_module_bigip_facts.py\&amp;quot;, line 1525, in generate_rule_dict\n    return generate_dict(rules, fields)\n  File \&amp;quot;/tmp/ansible_Uh97Oa/ansible_module_bigip_facts.py\&amp;quot;, line 1389, in generate_dict\n    temp.update([(item[0], item[1][i]) for item in zip(supported_fields, lists)])\nIndexError: list index out of range\n&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;}&lt;/span&gt;
+...ignoring
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;rule&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *****************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;rule&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ******************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;self_ip&lt;span class="o"&gt;)]&lt;/span&gt; *******************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;self_ip&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; **************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;self_ip&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ***************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;software&lt;span class="o"&gt;)]&lt;/span&gt; ******************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;software&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;software&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; **************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;system_info&lt;span class="o"&gt;)]&lt;/span&gt; ***************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;system_info&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; **********
+changed: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;system_info&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ***********
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;traffic_group&lt;span class="o"&gt;)]&lt;/span&gt; *************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;traffic_group&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ********
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;traffic_group&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *********
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;trunk&lt;span class="o"&gt;)]&lt;/span&gt; *********************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;trunk&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ****************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;trunk&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *****************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;virtual_address&lt;span class="o"&gt;)]&lt;/span&gt; ***********
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;virtual_address&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; ******
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;virtual_address&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; *******
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;virtual_server&lt;span class="o"&gt;)]&lt;/span&gt; ************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;virtual_server&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *******
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;virtual_server&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ********
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Collecting BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;vlan&lt;span class="o"&gt;)]&lt;/span&gt; **********************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;vlan&lt;span class="o"&gt;)&lt;/span&gt; success&lt;span class="o"&gt;]&lt;/span&gt; *****************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;collect_f5_stats : Writing BIG-IP facts: &lt;span class="o"&gt;(&lt;/span&gt;vlan&lt;span class="o"&gt;)&lt;/span&gt; failed&lt;span class="o"&gt;]&lt;/span&gt; ******************
+skipping: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;git_commit : add all files&lt;span class="o"&gt;]&lt;/span&gt; **********************************************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;git_commit : commit&lt;span class="o"&gt;]&lt;/span&gt; *****************************************************
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+TASK &lt;span class="o"&gt;[&lt;/span&gt;git_commit : push&lt;span class="o"&gt;]&lt;/span&gt; *******************************************************
+Username &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;https://github.company.com&amp;#39;&lt;/span&gt;: me
+Password &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;https://me@github.company.com&amp;#39;&lt;/span&gt;:
+ok: &lt;span class="o"&gt;[&lt;/span&gt;bigip.company.com -&amp;gt; localhost&lt;span class="o"&gt;]&lt;/span&gt;
+
+PLAY RECAP *********************************************************************
+bigip.company.com : &lt;span class="nv"&gt;ok&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;61&lt;/span&gt;   &lt;span class="nv"&gt;changed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;2&lt;/span&gt;    &lt;span class="nv"&gt;unreachable&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;    &lt;span class="nv"&gt;failed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;0
+
+➜  /working git:&lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</content><category term="ansible"></category><category term="netdevops"></category><category term="f5"></category></entry><entry><title>The first twenty interfaces.</title><link href="https://cidrblock.github.io/The%20first%20twenty%20interfaces.html" rel="alternate"></link><published>2017-01-30T15:25:46-08:00</published><updated>2017-01-30T15:25:46-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-01-30:/The first twenty interfaces.html</id><summary type="html"></summary><content type="html">&lt;p&gt;From &lt;a href="https://networktocode.slack.com/archives/ansible/p1485654659002727"&gt;#network_to_code&lt;/a&gt;:&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;"hey guys, I have a situation where I am using &lt;code&gt;ansible_net_interfaces&lt;/code&gt; and then later I want to pull the first 20 type: Gigabit Ethernet interfaces. Anyone have an idea as how to do this?"&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;Seems simple right?&lt;/p&gt;
 &lt;p&gt;The &lt;a href="https://docs.ansible.com/ansible/ios_facts_module.html"&gt;ios_facts&lt;/a&gt; module will collect interfaces and store them as ansible_net_interfaces.&lt;/p&gt;

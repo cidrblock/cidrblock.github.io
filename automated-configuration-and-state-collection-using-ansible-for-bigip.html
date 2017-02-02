@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags always come first -->
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Automated configuration and state collection using ansible for bigip. | network | automation
+</title>
+  <link rel="canonical" href="https://cidrblock.github.io/automated-configuration-and-state-collection-using-ansible-for-bigip.html">
+
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/all.atom.xml" title="Full Atom Feed">
+  <link rel="alternate" type="application/atom+xml" href="https://cidrblock.github.io/feeds/ansible.atom.xml" title="Categories Atom Feed">
+
+
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/pygments/default.min.css">
+  <link rel="stylesheet" href="https://cidrblock.github.io/theme/css/style.css">
+  <link href="https://fonts.googleapis.com/css?family=Anonymous+Pro" rel="stylesheet">
+
+
+<meta name="description" content="">
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1 class="title"><a href="https://cidrblock.github.io">network | automation</a></h1>
+          <ul class="list-inline">
+            <li class="list-inline-item"><a href="http://drawthe.net/" target="_blank">[drawthe.net]</a></li>
+            <li class="list-inline-item"><a href="https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwiKscj5lYPRAhUT4GMKHdAsBM4QFgghMAE&url=https%3A%2F%2Ftwitter.com%2Fjedelman8%2Fstatus%2F663808419783045120&usg=AFQjCNGWhcMLiY_-O6QZwG82IxyIMHqXoA" target="_blank">[#networktocode]</a></li>
+            <li class="list-inline-item"><a href="https://github.com/cidrblock/cidrblock.github.io-src/issues" target="_blank">[comments/issues]</a></li>
+            <li class="list-inline-item"><a href="network-automation-and-devops-resources.html" target="_blank">[netdevops resources]</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="container">
+      <h1>Automated configuration and state collection using ansible for bigip.
+</h1>
+      <hr>
+<article class="article">
+  <header>
+    <ul class="list-inline">
+      <li class="list-inline-item text-muted" title="2017-02-02T14:33:39.280203-08:00">
+        <i class="fa fa-clock-o"></i>
+        Thu 02 February 2017
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-folder-open-o"></i>
+        <a href="https://cidrblock.github.io/category/ansible.html">ansible</a>
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-user-o"></i>
+        <a href="https://cidrblock.github.io/author/bradley-a-thornton.html">Bradley A. Thornton</a>      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-files-o"></i>
+        <a href="https://cidrblock.github.io/tag/ansible.html">#ansible</a>,         <a href="https://cidrblock.github.io/tag/netdevops.html">#netdevops</a>,         <a href="https://cidrblock.github.io/tag/f5.html">#f5</a>      </li>
+    </ul>
+  </header>
+  <div class="content">
+    <h3>Playbook</h3>
+<p><a href="https://github.com/cidrblock/f5_health_check">HERE</a></p>
+<p>Clone this repo, delete the .git folder and push as a new repository to your internal or private git/github installation.</p>
+<h3>Overview</h3>
+<p>Here is an Ansible playbook repo that collects configuration and state information from an F5, and writes these stats to individual files.</p>
+<p>The stats are kept in a directory:</p>
+<p><code>stats/{{ inventory_hostname}}/{{ stat_name }}</code></p>
+<p>The playbook checks itself into github as well so the stats are are subject to version control.</p>
+<p>This can be run periodically or before and after maintenance to see changes in either the configuration or running state of the bigip.</p>
+<h3>Usage</h3>
+<p>Modify the inventory.txt file as needed.</p>
+<p>The following environment variables need to be set and reflect your credentials:</p>
+<div class="highlight"><pre><span></span>export ANSIBLE_F5_USERNAME=xxxx
+export ANSIBLE_F5_PASSWORD=&#39;xxxx&#39;
+export ANSIBLE_GIT_USERNAME=xxxx
+export ANSIBLE_GIT_EMAIL=me@company.com
+</pre></div>
+
+
+<p>Run the playbook:</p>
+<div class="highlight"><pre><span></span>ansible-playbook -i inventory.txt site.yml
+</pre></div>
+
+
+<p>When the playbook is ready to commit, the user will be prompted for their github credentials:</p>
+<div class="highlight"><pre><span></span><span class="n">TASK</span> <span class="p">[</span><span class="nl">git_commit</span> <span class="p">:</span> <span class="n">push</span><span class="p">]</span> <span class="o">*******************************************************</span>
+<span class="n">Username</span> <span class="k">for</span> <span class="err">&#39;</span><span class="nl">https</span><span class="p">:</span><span class="c1">//github.company.com&#39;: me</span>
+<span class="n">Password</span> <span class="k">for</span> <span class="err">&#39;</span><span class="nl">https</span><span class="p">:</span><span class="c1">//me@github.company.com&#39;:</span>
+<span class="nl">ok</span><span class="p">:</span> <span class="p">[</span><span class="n">bigip</span><span class="p">.</span><span class="n">company</span><span class="p">.</span><span class="n">com</span> <span class="o">-&gt;</span> <span class="n">localhost</span><span class="p">]</span>
+</pre></div>
+
+
+<h3>Example</h3>
+<div class="highlight"><pre><span></span>➜  /working git:<span class="o">(</span>master<span class="o">)</span> ansible-playbook -i inventory.txt site.yml
+
+PLAY <span class="o">[</span>all<span class="o">]</span> *********************************************************************
+
+TASK <span class="o">[</span>collect_f5_stats : Ensures bigip.company.com directory exists<span class="o">]</span> **
+ok: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collect a single stat and write to a file<span class="o">]</span> ************
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+included: /working/roles/collect_f5_stats/tasks/collect_and_write.yml <span class="k">for</span> bigip.company.com
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>address_class<span class="o">)]</span> *************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>address_class<span class="o">)</span> success<span class="o">]</span> ********
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>address_class<span class="o">)</span> failed<span class="o">]</span> *********
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>certificate<span class="o">)]</span> ***************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>certificate<span class="o">)</span> success<span class="o">]</span> **********
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>certificate<span class="o">)</span> failed<span class="o">]</span> ***********
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>client_ssl_profile<span class="o">)]</span> ********
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>client_ssl_profile<span class="o">)</span> success<span class="o">]</span> ***
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>client_ssl_profile<span class="o">)</span> failed<span class="o">]</span> ****
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>device<span class="o">)]</span> ********************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>device<span class="o">)</span> success<span class="o">]</span> ***************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>device<span class="o">)</span> failed<span class="o">]</span> ****************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>device_group<span class="o">)]</span> **************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>device_group<span class="o">)</span> success<span class="o">]</span> *********
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>device_group<span class="o">)</span> failed<span class="o">]</span> **********
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>interface<span class="o">)]</span> *****************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>interface<span class="o">)</span> success<span class="o">]</span> ************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>interface<span class="o">)</span> failed<span class="o">]</span> *************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>key<span class="o">)]</span> ***********************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>key<span class="o">)</span> success<span class="o">]</span> ******************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>key<span class="o">)</span> failed<span class="o">]</span> *******************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>node<span class="o">)]</span> **********************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>node<span class="o">)</span> success<span class="o">]</span> *****************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>node<span class="o">)</span> failed<span class="o">]</span> ******************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>pool<span class="o">)]</span> **********************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>pool<span class="o">)</span> success<span class="o">]</span> *****************
+changed: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>pool<span class="o">)</span> failed<span class="o">]</span> ******************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>provision<span class="o">)]</span> *****************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>provision<span class="o">)</span> success<span class="o">]</span> ************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>provision<span class="o">)</span> failed<span class="o">]</span> *************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>rule<span class="o">)]</span> **********************
+fatal: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>: FAILED! <span class="o">=</span>&gt; <span class="o">{</span><span class="s2">&quot;changed&quot;</span>: false, <span class="s2">&quot;failed&quot;</span>: true, <span class="s2">&quot;msg&quot;</span>: <span class="s2">&quot;received exception: list index out of range\ntraceback: Traceback (most recent call last):\n  File \&quot;/tmp/ansible_Uh97Oa/ansible_module_bigip_facts.py\&quot;, line 1687, in main\n    facts[&#39;rule&#39;] = generate_rule_dict(f5, regex)\n  File \&quot;/tmp/ansible_Uh97Oa/ansible_module_bigip_facts.py\&quot;, line 1525, in generate_rule_dict\n    return generate_dict(rules, fields)\n  File \&quot;/tmp/ansible_Uh97Oa/ansible_module_bigip_facts.py\&quot;, line 1389, in generate_dict\n    temp.update([(item[0], item[1][i]) for item in zip(supported_fields, lists)])\nIndexError: list index out of range\n&quot;</span><span class="o">}</span>
+...ignoring
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>rule<span class="o">)</span> success<span class="o">]</span> *****************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>rule<span class="o">)</span> failed<span class="o">]</span> ******************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>self_ip<span class="o">)]</span> *******************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>self_ip<span class="o">)</span> success<span class="o">]</span> **************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>self_ip<span class="o">)</span> failed<span class="o">]</span> ***************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>software<span class="o">)]</span> ******************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>software<span class="o">)</span> success<span class="o">]</span> *************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>software<span class="o">)</span> failed<span class="o">]</span> **************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>system_info<span class="o">)]</span> ***************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>system_info<span class="o">)</span> success<span class="o">]</span> **********
+changed: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>system_info<span class="o">)</span> failed<span class="o">]</span> ***********
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>traffic_group<span class="o">)]</span> *************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>traffic_group<span class="o">)</span> success<span class="o">]</span> ********
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>traffic_group<span class="o">)</span> failed<span class="o">]</span> *********
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>trunk<span class="o">)]</span> *********************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>trunk<span class="o">)</span> success<span class="o">]</span> ****************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>trunk<span class="o">)</span> failed<span class="o">]</span> *****************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>virtual_address<span class="o">)]</span> ***********
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>virtual_address<span class="o">)</span> success<span class="o">]</span> ******
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>virtual_address<span class="o">)</span> failed<span class="o">]</span> *******
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>virtual_server<span class="o">)]</span> ************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>virtual_server<span class="o">)</span> success<span class="o">]</span> *******
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>virtual_server<span class="o">)</span> failed<span class="o">]</span> ********
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Collecting BIG-IP facts: <span class="o">(</span>vlan<span class="o">)]</span> **********************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>vlan<span class="o">)</span> success<span class="o">]</span> *****************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>collect_f5_stats : Writing BIG-IP facts: <span class="o">(</span>vlan<span class="o">)</span> failed<span class="o">]</span> ******************
+skipping: <span class="o">[</span>bigip.company.com<span class="o">]</span>
+
+TASK <span class="o">[</span>git_commit : add all files<span class="o">]</span> **********************************************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>git_commit : commit<span class="o">]</span> *****************************************************
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+TASK <span class="o">[</span>git_commit : push<span class="o">]</span> *******************************************************
+Username <span class="k">for</span> <span class="s1">&#39;https://github.company.com&#39;</span>: me
+Password <span class="k">for</span> <span class="s1">&#39;https://me@github.company.com&#39;</span>:
+ok: <span class="o">[</span>bigip.company.com -&gt; localhost<span class="o">]</span>
+
+PLAY RECAP *********************************************************************
+bigip.company.com : <span class="nv">ok</span><span class="o">=</span><span class="m">61</span>   <span class="nv">changed</span><span class="o">=</span><span class="m">2</span>    <span class="nv">unreachable</span><span class="o">=</span><span class="m">0</span>    <span class="nv">failed</span><span class="o">=</span>0
+
+➜  /working git:<span class="o">(</span>master<span class="o">)</span>
+</pre></div>
+  </div>
+</article>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="row">
+       <ul class="col-sm-6 list-inline">
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/authors.html">Authors</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/archives.html">Archives</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/categories.html">Categories</a></li>
+          <li class="list-inline-item"><a href="https://cidrblock.github.io/tags.html">Tags</a></li>
+        </ul>
+        <p class="col-sm-6 text-sm-right text-muted">
+          Generated by <a href="https://github.com/getpelican/pelican" target="_blank">Pelican</a> / <a href="https://github.com/nairobilug/pelican-alchemy" target="_blank">&#x2728;</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
