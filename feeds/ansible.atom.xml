@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-02-11T14:53:05-08:00</updated><entry><title>Use Ansible to change the source of truth.</title><link href="https://cidrblock.github.io/ansible_sot.html" rel="alternate"></link><published>2017-02-11T14:53:05-08:00</published><updated>2017-02-11T14:53:05-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-11:/ansible_sot.html</id><summary type="html"></summary><content type="html">&lt;h1&gt;Overview&lt;/h1&gt;
+&lt;p&gt;Playbook source:&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/sot_vlans"&gt;https://github.com/cidrblock/sot_vlans&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;The intent of this playbook is to demonstrate the concept of "source of truth" as it relates to network devices.  Currently, in our environment, there is a high percentage of the network device configurations that is not store or tracked anywhere but the device itself or in the archive of the device's configuration.&lt;/p&gt;
 &lt;p&gt;The ultimate goal is to move the source of truth away from the devices into a source code repository.&lt;/p&gt;
 &lt;p&gt;We see the benefits of this approach being:&lt;/p&gt;
