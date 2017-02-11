@@ -1,5 +1,261 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-02-02T14:33:39-08:00</updated><entry><title>Automated configuration and state collection using ansible for bigip.</title><link href="https://cidrblock.github.io/automated-configuration-and-state-collection-using-ansible-for-bigip.html" rel="alternate"></link><published>2017-02-02T14:33:39-08:00</published><updated>2017-02-02T14:33:39-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-02:/automated-configuration-and-state-collection-using-ansible-for-bigip.html</id><summary type="html"></summary><content type="html">&lt;h3&gt;Playbook&lt;/h3&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-02-11T14:53:05-08:00</updated><entry><title>Use Ansible to change the source of truth.</title><link href="https://cidrblock.github.io/ansible_sot.html" rel="alternate"></link><published>2017-02-11T14:53:05-08:00</published><updated>2017-02-11T14:53:05-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-11:/ansible_sot.html</id><summary type="html"></summary><content type="html">&lt;h1&gt;Overview&lt;/h1&gt;
+&lt;p&gt;The intent of this playbook is to demonstrate the concept of "source of truth" as it relates to network devices.  Currently, in our environment, there is a high percentage of the network device configurations that is not store or tracked anywhere but the device itself or in the archive of the device's configuration.&lt;/p&gt;
+&lt;p&gt;The ultimate goal is to move the source of truth away from the devices into a source code repository.&lt;/p&gt;
+&lt;p&gt;We see the benefits of this approach being:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Since the metadata is stored as structured data is can be transformed into an OS specific configuration later.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Devices that should have the same configuration, can draw from the same source.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Eventually, event driven automation will trigger playbook runs so devices will automatically be updated when the repository changes.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;As an example, we can move the SOT for the VLANs on NX-OS systems to this playbook.  NX-OS was chosen as an example for a couple reasons:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;NX-OS does not store it's VLANs in the running configuration, so the output of "show vlan" needs to be parsed.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;This relies on the &lt;a href="https://github.com/networktocode/ntc-ansible"&gt;ntc_show_command&lt;/a&gt; module.  In the background it uses &lt;a href="http://jedelman.com/home/programmatic-access-to-cli-devices-with-textfsm/"&gt;textfsm&lt;/a&gt; to parse the output of a 'show' command and return structured data.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The playbook performs the following steps:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Determines the OS of the device, since we don't know at run time, all devices are treated as ios.  &lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Collects and updates each devices host_vars file with the current VLANs if they didn't originally exist.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Again, collects the VLANs on the device to compare with what Ansible knows to be the desired list.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Removes and add vlans as necessary&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Reports all changes at the end of the playbook.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The end state is Ansible is now the source of truth for each device's VLAN list.  An modification to the device's host_vars file will result in changes on the device for subsequent runs.&lt;/p&gt;
+&lt;h1&gt;Example and usage:&lt;/h1&gt;
+&lt;p&gt;Update the inventory.txt file with the devices to administer.&lt;/p&gt;
+&lt;p&gt;We'll run Ansible inside of our &lt;a href="https://github.com/cidrblock/docker_ansible"&gt;docker&lt;/a&gt; container since the ntc_show module is installed.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;docker run --rm -it -v `pwd`:/working ansible-dev
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Inside the container we need to switch to the working directory and set the username and password via environment variables.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nb"&gt;cd&lt;/span&gt; /working
+&lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;ANSIBLE_NET_USERNAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;username
+&lt;span class="nb"&gt;export&lt;/span&gt; &lt;span class="nv"&gt;ANSIBLE_NET_PASSWORD&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;password&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Ensure the host list is what you expect by running --list-hosts for the playbook:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;➜  /working ansible-playbook -i inventory.txt site.yml --list-hosts
+
+playbook: site.yml
+
+  play &lt;span class="c1"&gt;#1 (all): all    TAGS: []&lt;/span&gt;
+    pattern: &lt;span class="o"&gt;[&lt;/span&gt;u&lt;span class="s1"&gt;&amp;#39;all&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;
+    hosts &lt;span class="o"&gt;(&lt;/span&gt;1&lt;span class="o"&gt;)&lt;/span&gt;:
+      router.company.net
+
+  play &lt;span class="c1"&gt;#2 (all): all    TAGS: []&lt;/span&gt;
+    pattern: &lt;span class="o"&gt;[&lt;/span&gt;u&lt;span class="s1"&gt;&amp;#39;all&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;
+    hosts &lt;span class="o"&gt;(&lt;/span&gt;1&lt;span class="o"&gt;)&lt;/span&gt;:
+      router.company.net
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;and the correct tasks will be run:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;➜  /working ansible-playbook -i inventory.txt site.yml --list-tasks
+
+playbook: site.yml
+
+  play &lt;span class="c1"&gt;#1 (all): all    TAGS: []&lt;/span&gt;
+    tasks:
+      determine_os : Run show version   TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      determine_os : Set fact &lt;span class="k"&gt;for&lt;/span&gt; os and ssh_accessible TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      retrieve_running : Include OS files &lt;span class="k"&gt;for&lt;/span&gt; config retrieval  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      retrieve_running : Set the running configuration as a fact    TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      save_vlans : Parse the output from &lt;span class="s1"&gt;&amp;#39;show vlan&amp;#39;&lt;/span&gt;    TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      save_vlans : Set a fact &lt;span class="k"&gt;for&lt;/span&gt; the exisitng VLANs    TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      save_vlans : Ensure we have a host specific vars file TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      save_vlans : Load the host&lt;span class="s1"&gt;&amp;#39;s vars so we can add the VLANs to it.  TAGS: []&lt;/span&gt;
+&lt;span class="s1"&gt;      save_vlans : Add the existing VLAN list to the contents of the host_vars file TAGS: []&lt;/span&gt;
+&lt;span class="s1"&gt;      save_vlans : Write the host&amp;#39;&lt;/span&gt;s vars file back  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      save_vlans : Set a fact &lt;span class="k"&gt;for&lt;/span&gt; vlans as &lt;span class="k"&gt;if&lt;/span&gt; they were loaded from the inventory   TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+
+  play &lt;span class="c1"&gt;#2 (all): all    TAGS: []&lt;/span&gt;
+    tasks:
+      modify_vlans : Parse the output from &lt;span class="s1"&gt;&amp;#39;show vlan&amp;#39;&lt;/span&gt;  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      modify_vlans : Set the add and remove VLANs as facts  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      modify_vlans : Build a list of VLAN ids that were added so they are not removed   TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      modify_vlans : Add each VLAN  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      modify_vlans : Remove the unneeded VLANs  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      report : Show config changes &lt;span class="k"&gt;for&lt;/span&gt; device   TAGS: &lt;span class="o"&gt;[&lt;/span&gt;report&lt;span class="o"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Give it a run in check mode.&lt;/p&gt;
+&lt;p&gt;Note: Even in check mode this will update your host_vars/xxxx files with the existing VLANs on each device.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;➜  /working ansible-playbook -i inventory.txt site.yml --check
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h1&gt;First run&lt;/h1&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;➜  /working ansible-playbook -i inventory.txt site.yml --check&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY [all] *********************************************************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [determine_os&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Run show version] *****************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [determine_os&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set fact for os and ssh_accessible] ***********************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Parse the output from &amp;#39;show vlan&amp;#39;] **************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set a fact for the exisitng VLANs] **************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Ensure we have a host specific vars file] *******************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Load the host&amp;#39;s vars so we can add the VLANs to it.] ********&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add the existing VLAN list to the contents of the host_vars file] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Write the host&amp;#39;s vars file back] ****************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set a fact for vlans as if they were loaded from the inventory] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY [all] *********************************************************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Parse the output from &amp;#39;show vlan&amp;#39;] ************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set the add and remove VLANs as facts] ********************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Build a list of VLAN ids that were added so they are not removed] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add each VLAN] ********************************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Remove the unneeded VLANs] ********************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [report&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Show config changes for device] *********************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY RECAP *********************************************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=12   changed=2    unreachable=0    failed=0&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;➜  /working&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The device's host_vars file was created if it didn't exists and the current list of VLANs on the device added to it.&lt;/p&gt;
+&lt;p&gt;Now, modify the VLAN list in the host_vars file and rerun to see the proposed changes.  One VLAN has been modified, one deleted and one added:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;➜  /working ansible-playbook -i inventory.txt site.yml --check&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY [all] *********************************************************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [determine_os&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Run show version] *****************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [determine_os&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set fact for os and ssh_accessible] ***********************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Parse the output from &amp;#39;show vlan&amp;#39;] **************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set a fact for the exisitng VLANs] **************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Ensure we have a host specific vars file] *******************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Load the host&amp;#39;s vars so we can add the VLANs to it.] ********&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add the existing VLAN list to the contents of the host_vars file] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Write the host&amp;#39;s vars file back] ****************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [save_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set a fact for vlans as if they were loaded from the inventory] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY [all] *********************************************************************&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Parse the output from &amp;#39;show vlan&amp;#39;] ************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Set the add and remove VLANs as facts] ********************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Build a list of VLAN ids that were added so they are not removed] ***&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add each VLAN] ********************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/modify_vlans/tasks/nxos_vlan_add.yml for router.company.net&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/modify_vlans/tasks/nxos_vlan_add.yml for router.company.net&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add/modify vlan 42] ***************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (nxos)] *****************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Add/modify vlan 2299] *************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (nxos)] *****************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Remove the unneeded VLANs] ********************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;skipping&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; (item={u&amp;#39;name&amp;#39;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;u&amp;#39;zone2-network-fw-outside&amp;#39;, u&amp;#39;vlan_id&amp;#39;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;u&amp;#39;2299&amp;#39;})&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;included&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;/working/roles/modify_vlans/tasks/nxos_vlan_remove.yml for router.company.net&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Remove vlan 2199] *****************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;changed&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [modify_vlans&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Append changes to log (nxos)] *****************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;TASK [report&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;Show config changes for device] *********************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;router.company.net&lt;/span&gt;&lt;span class="p p-Indicator"&gt;]&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;=&amp;gt; {&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;&amp;quot;msg&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="p p-Indicator"&gt;[&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;modify_vlans&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;vlan&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;42&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;name&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;new_vlan&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;modify_vlans&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;vlan&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;2299&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;name&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;zone2-network-fw-outside-changed&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;***&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;ROLE:&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;modify_vlans&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;***&amp;quot;&lt;/span&gt;&lt;span class="p p-Indicator"&gt;,&lt;/span&gt;
+        &lt;span class="s"&gt;&amp;quot;no&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;vlan&lt;/span&gt;&lt;span class="nv"&gt; &lt;/span&gt;&lt;span class="s"&gt;2199&amp;quot;&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;]&lt;/span&gt;
+&lt;span class="err"&gt;}&lt;/span&gt;
+
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;PLAY RECAP *********************************************************************&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;router.company.net&lt;/span&gt; &lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;ok=15   changed=3    unreachable=0    failed=0&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Ansible is now the authority for the device's VLAN list.&lt;/p&gt;</content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Automated configuration and state collection using ansible for bigip.</title><link href="https://cidrblock.github.io/automated-configuration-and-state-collection-using-ansible-for-bigip.html" rel="alternate"></link><published>2017-02-02T14:33:39-08:00</published><updated>2017-02-02T14:33:39-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-02:/automated-configuration-and-state-collection-using-ansible-for-bigip.html</id><summary type="html"></summary><content type="html">&lt;h3&gt;Playbook&lt;/h3&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/f5_health_check"&gt;HERE&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Clone this repo, delete the .git folder and push as a new repository to your internal or private git/github installation.&lt;/p&gt;
 &lt;h3&gt;Overview&lt;/h3&gt;
