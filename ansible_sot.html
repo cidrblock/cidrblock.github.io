@@ -237,7 +237,9 @@ playbook: site.yml
 
 
 <p>The device's host_vars file was created if it didn't exists and the current list of VLANs on the device added to it.</p>
-<p>Now, modify the VLAN list in the host_vars file and rerun to see the proposed changes.  One VLAN has been modified, one deleted and one added:</p>
+<h1>Subsequent Run</h1>
+<p>Now, modify the VLAN list in the host_vars file and rerun to see the proposed changes.  One VLAN has been modified, one deleted and one added.</p>
+<p>The initial collection of VLANs from the device is skipped because the host_vars already has the authoritive list.</p>
 <div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">➜  /working ansible-playbook -i inventory.txt site.yml --check</span>
 
 <span class="l l-Scalar l-Scalar-Plain">PLAY [all] *********************************************************************</span>
