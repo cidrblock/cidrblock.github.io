@@ -9,12 +9,12 @@
 &lt;p&gt;This post and the associated Ansible playbook demonstrates a technique to programmatically identify commonly configured interfaces across multiple network devices. Promote those profiles to definitions shared across devices, and replace the individual interfaces configuration with an inheritance link to the parent profile.  The associated Ansible playbook is fully functional and can be used to test profile changes and review the proposed changes across devices.&lt;/p&gt;
 &lt;h3&gt;Technique&lt;/h3&gt;
 &lt;p&gt;The steps in the process to DRY up the host_vars files include:&lt;/p&gt;
-&lt;p&gt;1) Remove the name and description keys from the netcopa host_vars files. In some environments the description may also be consistent across interfaces so it could be left in.
-2) Serialize the remaining interface configurations across all devices, and reduce to a set of unique configurations.
-3) Limit the list to interface configurations that occur only 2 or more times across all devices.
-4) Generate a unique identifier for the newly identified profiles.
-5) Modify the host_vars file for each device such that each interface inherits from a profile and retains the original name and description.
-6) Write the profiles to the group_vars directly so they can be inherited by each device during the Ansible playbook run.&lt;/p&gt;
+&lt;p&gt;1) Remove the name and description keys from the netcopa host_vars files. In some environments the description may also be consistent across interfaces so it could be left in.&lt;/p&gt;
+&lt;p&gt;2) Serialize the remaining interface configurations across all devices, and reduce to a set of unique configurations.&lt;/p&gt;
+&lt;p&gt;3) Limit the list to interface configurations that occur only 2 or more times across all devices.
+4) Generate a unique identifier for the newly identified profiles.&lt;/p&gt;
+&lt;p&gt;5) Modify the host_vars file for each device such that each interface inherits from a profile and retains the original name and description.&lt;/p&gt;
+&lt;p&gt;6) Write the profiles to the group_vars directly so they can be inherited by each device during the Ansible playbook run.&lt;/p&gt;
 &lt;h3&gt;Walk though&lt;/h3&gt;
 &lt;p&gt;Review the configurations in the repository configurations directory.  A high degree of duplication can be seen in the interface configurations. For example:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;interface GigabitEthernet1/1
@@ -105,11 +105,11 @@
 
 &lt;h3&gt;Review of the Ansible playbook&lt;/h3&gt;
 &lt;p&gt;The Ansible playbook includes two custom plugins.&lt;/p&gt;
-&lt;p&gt;1) A filter plugin to remove the leading spaces from the interface jinja template output.  The template was directly copied from netcopa.
-2) A lookup plugin used to modify the interface configurations run-time to add the inherited port profile configuration.&lt;/p&gt;
+&lt;p&gt;1) A filter plugin to remove the leading spaces from the interface jinja template output.  The template was directly copied from netcopa.&lt;/p&gt;
+&lt;p&gt;2) A lookup plugin used to modify the interface configurations run-time to add the inherited port profile configuration.&lt;/p&gt;
 &lt;p&gt;The Ansible playbook include two simple roles.&lt;/p&gt;
-&lt;p&gt;1) An interface role which loads files specific to the device OS and iterates through the interfaces using the ios_config module.  The configuration is loaded from a file in the example.
-2) A "change log" role.  This role simply report the proposed changes to each device at the end of the playbook run.&lt;/p&gt;
+&lt;p&gt;1) An interface role which loads files specific to the device OS and iterates through the interfaces using the ios_config module.  The configuration is loaded from a file in the example.&lt;/p&gt;
+&lt;p&gt;2) A "change log" role.  This role simply report the proposed changes to each device at the end of the playbook run.&lt;/p&gt;
 &lt;h3&gt;Make a change and run the playbook.&lt;/h3&gt;
 &lt;p&gt;We will modify the port profile for the example above. The user's access vlan will be moved to vlan 600 from vlan 267.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;b185b52c-70b9-4949-b5a1-e0a8d4ab779c&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
@@ -132,7 +132,7 @@
 
 
 &lt;h3&gt;Playbook results&lt;/h3&gt;
-&lt;p&gt;The playbook takes some time to run as a total of 400+ interfaces exisit across both devices.&lt;/p&gt;
+&lt;p&gt;The playbook takes some time to run as a total of 400+ interfaces exist across both devices.&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="err"&gt;➜&lt;/span&gt;  &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;working&lt;/span&gt; &lt;span class="n"&gt;ansible&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;playbook&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="n"&gt;inventory&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;txt&lt;/span&gt; &lt;span class="n"&gt;site&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;yml&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;check&lt;/span&gt;
 &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="p"&gt;...&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
 &lt;span class="n"&gt;TASK&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nl"&gt;ansible_change_report&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Show&lt;/span&gt; &lt;span class="n"&gt;config&lt;/span&gt; &lt;span class="n"&gt;changes&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;device&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;******************&lt;/span&gt;
