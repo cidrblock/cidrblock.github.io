@@ -1,5 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-04-08T16:24:59-07:00</updated><entry><title>Matching snowflakes</title><link href="https://cidrblock.github.io/Automatically%20discovering%20port%20profiles.html" rel="alternate"></link><published>2017-04-08T16:24:59-07:00</published><updated>2017-04-08T16:24:59-07:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-04-08:/Automatically discovering port profiles.html</id><summary type="html">&lt;p&gt;Programmatically finding port profiles across switches using netcopa, ansible and python&lt;/p&gt;</summary><content type="html"></content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Use Ansible to change the source of truth.</title><link href="https://cidrblock.github.io/ansible_sot.html" rel="alternate"></link><published>2017-02-11T14:53:05-08:00</published><updated>2017-02-11T14:53:05-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-11:/ansible_sot.html</id><summary type="html"></summary><content type="html">&lt;h1&gt;Overview&lt;/h1&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-04-08T16:24:59-07:00</updated><entry><title>Matching snowflakes</title><link href="https://cidrblock.github.io/Automatically%20discovering%20port%20profiles.html" rel="alternate"></link><published>2017-04-08T16:24:59-07:00</published><updated>2017-04-08T16:24:59-07:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-04-08:/Automatically discovering port profiles.html</id><summary type="html">&lt;p&gt;Programmatically finding port profiles across switches using netcopa, Ansible and python&lt;/p&gt;</summary><content type="html">&lt;h3&gt;Introduction&lt;/h3&gt;
+&lt;p&gt;One of the more critical steps in fully automating the network, is to move the source of truth from the network devices to a repository. Only then can the configuration be programmatically modified and pushed back to the device. Change the data, change the network. The concept of infrastructure as data not infrastructure as code can be tracked back to the early days of Ansible prior to networking support.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://github.com/cidrblock/netcopa"&gt;netcopa&lt;/a&gt; can be used to convert device configuration files from text into yaml for use in Ansible. One downside of converting every network device configuration independently to a host_vars file is that the files are large and can have a high degree of duplication.  This is especially evident when converting switches at the access layer where multiple interfaces share the same configuration. The yaml files should be &lt;a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself"&gt;DRY&lt;/a&gt;ed up.&lt;/p&gt;
+&lt;p&gt;Some OSs support port profiles, but if this capability does not exist or is currently not in use, it would be necessary to manually review the configurations and identify switch ports that have a common configuration to remove the duplication. Configuration inheritance can be added to Ansible with a loopkup plugin. One example of that technique is here. https://github.com/cidrblock/shared_ansible_data_model&lt;/p&gt;
+&lt;p&gt;This post and the associated Ansible playbook demonstrates a technique to programmatically identify commonly configured interfaces across multiple network devices. Promote those profiles to definitions shared across devices, and replace the individual interfaces configuration with an inheritance link to the parent profile.  The associated Ansible playbook is fully functional and can be used to test profile changes and review the proposed changes across devices.&lt;/p&gt;
+&lt;h3&gt;Technique&lt;/h3&gt;
+&lt;p&gt;The steps in the process to DRY up the files include:&lt;/p&gt;
+&lt;p&gt;1) Remove the name and description keys from the netcopa host_vars files. In some environments the description may also be consistent across interfaces so it could be left in.
+2) Serialize the remaining interface configurations across all devices, and reduce to a set of unique configurations.
+3) Limit the list to interface configurations that occur only 2 or more times across all devices.
+4) Generate a unique identifier for the nely identified profiles.
+5) Modify the host_vars file for each device such that each interface inherits from a profile and retains the original name and description.
+6) Write the profiles to the group_vars directly so they can be inherited by each device during the Ansible playbook run.&lt;/p&gt;
+&lt;h3&gt;Walk though&lt;/h3&gt;
+&lt;p&gt;Review the configurations in the repository configurations directory.  A high degree of duplication can be seen in the interface configurations. For example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;interface GigabitEthernet1/1
+ switchport access vlan 267
+ switchport mode access
+ switchport voice vlan 867
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ service-policy input company-user-access-450x
+ service-policy output company-user-access-dbl
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This interface configuration is common to many of the interfaces in both sample configurations.  the duplication can also be seen in the netcopa created host_vars files for each device.  &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;GigabitEthernet1/1&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;GigabitEthernet1/1&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;service_policies&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;input&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-450x&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;output&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-dbl&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;spanning-tree&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;bpduguard&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;portfast&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;switchport&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;267&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;mode&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;voice&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;867&lt;/span&gt;
+&lt;span class="l l-Scalar l-Scalar-Plain"&gt;GigabitEthernet1/10&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;GigabitEthernet1/10&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;service_policies&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;input&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-450x&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;output&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-dbl&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;spanning-tree&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;bpduguard&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;portfast&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;switchport&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;267&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;mode&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;voice&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;867&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;A sample python script exists in the utilities directory that identifies common interface configurations. Upon running thae script the orginal host_vars files are copied to a host_vars_original directory.&lt;/p&gt;
+&lt;p&gt;The host_vars files have been reduced from 4000+ lines to 800.&lt;/p&gt;
+&lt;p&gt;Each identified port profiles is assigned a uuid. For example:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;b185b52c-70b9-4949-b5a1-e0a8d4ab779c&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;service_policies&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;input&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-450x&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;output&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-dbl&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;spanning-tree&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;bpduguard&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;portfast&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;switchport&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;267&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;mode&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;voice&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;867&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Note: In a production enviroment the uuid would likely be replaced with something more meaningful such as "user access port".&lt;/p&gt;
+&lt;p&gt;The port profiles are written to the group_vars directory in port_profiles.yml.&lt;/p&gt;
+&lt;p&gt;The interfaces matching the profile across all devices have been modfied to reflect their inheritance of the parent configuration.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;GigabitEthernet1/1&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;inherit_from&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;b185b52c-70b9-4949-b5a1-e0a8d4ab779c&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;GigabitEthernet1/1&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Review of the Ansible playbook&lt;/h3&gt;
+&lt;p&gt;The Ansible playbook includes two custom plugins.&lt;/p&gt;
+&lt;p&gt;1) A filter plugin to remove the leading spaces from the interface jinja template output.  The template was directly copied from netcopa.
+2) A lookup plugin used to modify the interface configurations run-time to add the port profile configuration.&lt;/p&gt;
+&lt;p&gt;The Ansible playbook include two simple roles.&lt;/p&gt;
+&lt;p&gt;1) An interface role which loads files specific to the device OS and iterates through the interfaces using the ios_config module.  The configuration is loaded from a file in the example.
+2) A "change log" role.  This role simply report the proposed changes to each device at the end of the playbook run.&lt;/p&gt;
+&lt;h3&gt;Make a change and run the playbook.&lt;/h3&gt;
+&lt;p&gt;We will modify the port profile for the example above. The user's access port should be moved to vlan 600 from vlan 267.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;b185b52c-70b9-4949-b5a1-e0a8d4ab779c&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;service_policies&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;input&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-450x&lt;/span&gt;
+  &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;direction&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;output&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;name&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;company-user-access-dbl&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;spanning-tree&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;bpduguard&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;portfast&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;true&lt;/span&gt;
+  &lt;span class="l l-Scalar l-Scalar-Plain"&gt;switchport&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;600&lt;/span&gt; &lt;span class="c1"&gt;# was 267&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;mode&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+    &lt;span class="p p-Indicator"&gt;-&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;access&lt;/span&gt;
+    &lt;span class="l l-Scalar l-Scalar-Plain"&gt;voice&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt;
+      &lt;span class="l l-Scalar l-Scalar-Plain"&gt;vlan&lt;/span&gt;&lt;span class="p p-Indicator"&gt;:&lt;/span&gt; &lt;span class="l l-Scalar l-Scalar-Plain"&gt;867&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Playbook results&lt;/h3&gt;
+&lt;p&gt;The playbook takes some time to run as a total of 400+ interfaces exisit across both devices.&lt;/p&gt;
+&lt;p&gt;```
+➜  /working ansible-playbook -i inventory.txt site.yml --check
+&amp;lt;...&amp;gt;&lt;/p&gt;</content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Use Ansible to change the source of truth.</title><link href="https://cidrblock.github.io/ansible_sot.html" rel="alternate"></link><published>2017-02-11T14:53:05-08:00</published><updated>2017-02-11T14:53:05-08:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-02-11:/ansible_sot.html</id><summary type="html"></summary><content type="html">&lt;h1&gt;Overview&lt;/h1&gt;
 &lt;p&gt;Playbook source:&lt;/p&gt;
 &lt;p&gt;&lt;a href="https://github.com/cidrblock/sot_vlans"&gt;https://github.com/cidrblock/sot_vlans&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;The intent of this playbook is to demonstrate the concept of "source of truth" as it relates to network devices.  Currently, in our environment, there is a high percentage of the network device configurations that is not store or tracked anywhere but the device itself or in the archive of the device's configuration.&lt;/p&gt;

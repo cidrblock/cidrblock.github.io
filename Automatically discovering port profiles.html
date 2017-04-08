@@ -22,7 +22,7 @@
   <link href="https://fonts.googleapis.com/css?family=Anonymous+Pro" rel="stylesheet">
 
 
-<meta name="description" content="Programmatically finding port profiles across switches using netcopa, ansible and python">
+<meta name="description" content="Programmatically finding port profiles across switches using netcopa, Ansible and python">
 </head>
 
 <body>
@@ -67,7 +67,134 @@
     </ul>
   </header>
   <div class="content">
-    
+    <h3>Introduction</h3>
+<p>One of the more critical steps in fully automating the network, is to move the source of truth from the network devices to a repository. Only then can the configuration be programmatically modified and pushed back to the device. Change the data, change the network. The concept of infrastructure as data not infrastructure as code can be tracked back to the early days of Ansible prior to networking support.</p>
+<p><a href="https://github.com/cidrblock/netcopa">netcopa</a> can be used to convert device configuration files from text into yaml for use in Ansible. One downside of converting every network device configuration independently to a host_vars file is that the files are large and can have a high degree of duplication.  This is especially evident when converting switches at the access layer where multiple interfaces share the same configuration. The yaml files should be <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY</a>ed up.</p>
+<p>Some OSs support port profiles, but if this capability does not exist or is currently not in use, it would be necessary to manually review the configurations and identify switch ports that have a common configuration to remove the duplication. Configuration inheritance can be added to Ansible with a loopkup plugin. One example of that technique is here. https://github.com/cidrblock/shared_ansible_data_model</p>
+<p>This post and the associated Ansible playbook demonstrates a technique to programmatically identify commonly configured interfaces across multiple network devices. Promote those profiles to definitions shared across devices, and replace the individual interfaces configuration with an inheritance link to the parent profile.  The associated Ansible playbook is fully functional and can be used to test profile changes and review the proposed changes across devices.</p>
+<h3>Technique</h3>
+<p>The steps in the process to DRY up the files include:</p>
+<p>1) Remove the name and description keys from the netcopa host_vars files. In some environments the description may also be consistent across interfaces so it could be left in.
+2) Serialize the remaining interface configurations across all devices, and reduce to a set of unique configurations.
+3) Limit the list to interface configurations that occur only 2 or more times across all devices.
+4) Generate a unique identifier for the nely identified profiles.
+5) Modify the host_vars file for each device such that each interface inherits from a profile and retains the original name and description.
+6) Write the profiles to the group_vars directly so they can be inherited by each device during the Ansible playbook run.</p>
+<h3>Walk though</h3>
+<p>Review the configurations in the repository configurations directory.  A high degree of duplication can be seen in the interface configurations. For example:</p>
+<div class="highlight"><pre><span></span>interface GigabitEthernet1/1
+ switchport access vlan 267
+ switchport mode access
+ switchport voice vlan 867
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ service-policy input company-user-access-450x
+ service-policy output company-user-access-dbl
+</pre></div>
+
+
+<p>This interface configuration is common to many of the interfaces in both sample configurations.  the duplication can also be seen in the netcopa created host_vars files for each device.  </p>
+<div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">GigabitEthernet1/1</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">GigabitEthernet1/1</span>
+  <span class="l l-Scalar l-Scalar-Plain">service_policies</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-450x</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">output</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-dbl</span>
+  <span class="l l-Scalar l-Scalar-Plain">spanning-tree</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">bpduguard</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="l l-Scalar l-Scalar-Plain">portfast</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+  <span class="l l-Scalar l-Scalar-Plain">switchport</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">access</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">267</span>
+    <span class="l l-Scalar l-Scalar-Plain">mode</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">access</span>
+    <span class="l l-Scalar l-Scalar-Plain">voice</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">867</span>
+<span class="l l-Scalar l-Scalar-Plain">GigabitEthernet1/10</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">GigabitEthernet1/10</span>
+  <span class="l l-Scalar l-Scalar-Plain">service_policies</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-450x</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">output</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-dbl</span>
+  <span class="l l-Scalar l-Scalar-Plain">spanning-tree</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">bpduguard</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="l l-Scalar l-Scalar-Plain">portfast</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+  <span class="l l-Scalar l-Scalar-Plain">switchport</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">access</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">267</span>
+    <span class="l l-Scalar l-Scalar-Plain">mode</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">access</span>
+    <span class="l l-Scalar l-Scalar-Plain">voice</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">867</span>
+</pre></div>
+
+
+<p>A sample python script exists in the utilities directory that identifies common interface configurations. Upon running thae script the orginal host_vars files are copied to a host_vars_original directory.</p>
+<p>The host_vars files have been reduced from 4000+ lines to 800.</p>
+<p>Each identified port profiles is assigned a uuid. For example:</p>
+<div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">b185b52c-70b9-4949-b5a1-e0a8d4ab779c</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">service_policies</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-450x</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">output</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-dbl</span>
+  <span class="l l-Scalar l-Scalar-Plain">spanning-tree</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">bpduguard</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="l l-Scalar l-Scalar-Plain">portfast</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+  <span class="l l-Scalar l-Scalar-Plain">switchport</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">access</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">267</span>
+    <span class="l l-Scalar l-Scalar-Plain">mode</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">access</span>
+    <span class="l l-Scalar l-Scalar-Plain">voice</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">867</span>
+</pre></div>
+
+
+<p>Note: In a production enviroment the uuid would likely be replaced with something more meaningful such as "user access port".</p>
+<p>The port profiles are written to the group_vars directory in port_profiles.yml.</p>
+<p>The interfaces matching the profile across all devices have been modfied to reflect their inheritance of the parent configuration.</p>
+<div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">GigabitEthernet1/1</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">inherit_from</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">b185b52c-70b9-4949-b5a1-e0a8d4ab779c</span>
+  <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">GigabitEthernet1/1</span>
+</pre></div>
+
+
+<h3>Review of the Ansible playbook</h3>
+<p>The Ansible playbook includes two custom plugins.</p>
+<p>1) A filter plugin to remove the leading spaces from the interface jinja template output.  The template was directly copied from netcopa.
+2) A lookup plugin used to modify the interface configurations run-time to add the port profile configuration.</p>
+<p>The Ansible playbook include two simple roles.</p>
+<p>1) An interface role which loads files specific to the device OS and iterates through the interfaces using the ios_config module.  The configuration is loaded from a file in the example.
+2) A "change log" role.  This role simply report the proposed changes to each device at the end of the playbook run.</p>
+<h3>Make a change and run the playbook.</h3>
+<p>We will modify the port profile for the example above. The user's access port should be moved to vlan 600 from vlan 267.</p>
+<div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">b185b52c-70b9-4949-b5a1-e0a8d4ab779c</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">service_policies</span><span class="p p-Indicator">:</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-450x</span>
+  <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">output</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">company-user-access-dbl</span>
+  <span class="l l-Scalar l-Scalar-Plain">spanning-tree</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">bpduguard</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="l l-Scalar l-Scalar-Plain">portfast</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+  <span class="l l-Scalar l-Scalar-Plain">switchport</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">access</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">600</span> <span class="c1"># was 267</span>
+    <span class="l l-Scalar l-Scalar-Plain">mode</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">access</span>
+    <span class="l l-Scalar l-Scalar-Plain">voice</span><span class="p p-Indicator">:</span>
+      <span class="l l-Scalar l-Scalar-Plain">vlan</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">867</span>
+</pre></div>
+
+
+<h3>Playbook results</h3>
+<p>The playbook takes some time to run as a total of 400+ interfaces exisit across both devices.</p>
+<p>```
+➜  /working ansible-playbook -i inventory.txt site.yml --check
+&lt;...&gt;</p>
   </div>
 </article>
     </div>
