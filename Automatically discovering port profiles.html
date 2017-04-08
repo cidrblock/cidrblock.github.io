@@ -67,17 +67,20 @@
     </ul>
   </header>
   <div class="content">
-    <h3>Introduction</h3>
-<p>One of the more critical steps in fully automating the network, is to move the source of truth from the network devices to a repository. Only then can the configuration be programmatically modified and pushed back to the device. Change the data, change the network. The concept of infrastructure as data not infrastructure as code can be tracked back to the early days of Ansible prior to networking support.</p>
+    <h3>The code</h3>
+<p>The associated repository and Ansible plabook can be found here:</p>
+<p>https://github.com/cidrblock/identify_port_profiles_across_devices</p>
+<h3>Introduction</h3>
+<p>One of the more critical steps in fully automating a brownfield network, is to move the source of truth from the network devices to a repository. Then the configuration be programmatically modified and pushed back to the device. Change the data, change the network. The concept of infrastructure as data not infrastructure as code can be tracked back to the early days of Ansible prior to networking support.</p>
 <p><a href="https://github.com/cidrblock/netcopa">netcopa</a> can be used to convert device configuration files from text into yaml for use in Ansible. One downside of converting every network device configuration independently to a host_vars file is that the files are large and can have a high degree of duplication.  This is especially evident when converting switches at the access layer where multiple interfaces share the same configuration. The yaml files should be <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY</a>ed up.</p>
 <p>Some OSs support port profiles, but if this capability does not exist or is currently not in use, it would be necessary to manually review the configurations and identify switch ports that have a common configuration to remove the duplication. Configuration inheritance can be added to Ansible with a loopkup plugin. One example of that technique is here. https://github.com/cidrblock/shared_ansible_data_model</p>
 <p>This post and the associated Ansible playbook demonstrates a technique to programmatically identify commonly configured interfaces across multiple network devices. Promote those profiles to definitions shared across devices, and replace the individual interfaces configuration with an inheritance link to the parent profile.  The associated Ansible playbook is fully functional and can be used to test profile changes and review the proposed changes across devices.</p>
 <h3>Technique</h3>
-<p>The steps in the process to DRY up the files include:</p>
+<p>The steps in the process to DRY up the host_vars files include:</p>
 <p>1) Remove the name and description keys from the netcopa host_vars files. In some environments the description may also be consistent across interfaces so it could be left in.
 2) Serialize the remaining interface configurations across all devices, and reduce to a set of unique configurations.
 3) Limit the list to interface configurations that occur only 2 or more times across all devices.
-4) Generate a unique identifier for the nely identified profiles.
+4) Generate a unique identifier for the newly identified profiles.
 5) Modify the host_vars file for each device such that each interface inherits from a profile and retains the original name and description.
 6) Write the profiles to the group_vars directly so they can be inherited by each device during the Ansible playbook run.</p>
 <h3>Walk though</h3>
@@ -131,7 +134,13 @@
 </pre></div>
 
 
-<p>A sample python script exists in the utilities directory that identifies common interface configurations. Upon running thae script the orginal host_vars files are copied to a host_vars_original directory.</p>
+<p>A sample python script exists in the utilities directory that identifies common interface configurations. Upon running the script the original host_vars files are copied to a host_vars_original directory.</p>
+<div class="highlight"><pre><span></span>➜  utilities python find_profiles.py
+11 profiles identified and written to port_profiles.yml
+➜  utilities
+</pre></div>
+
+
 <p>The host_vars files have been reduced from 4000+ lines to 800.</p>
 <p>Each identified port profiles is assigned a uuid. For example:</p>
 <div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">b185b52c-70b9-4949-b5a1-e0a8d4ab779c</span><span class="p p-Indicator">:</span>
@@ -165,12 +174,12 @@
 <h3>Review of the Ansible playbook</h3>
 <p>The Ansible playbook includes two custom plugins.</p>
 <p>1) A filter plugin to remove the leading spaces from the interface jinja template output.  The template was directly copied from netcopa.
-2) A lookup plugin used to modify the interface configurations run-time to add the port profile configuration.</p>
+2) A lookup plugin used to modify the interface configurations run-time to add the inherited port profile configuration.</p>
 <p>The Ansible playbook include two simple roles.</p>
 <p>1) An interface role which loads files specific to the device OS and iterates through the interfaces using the ios_config module.  The configuration is loaded from a file in the example.
 2) A "change log" role.  This role simply report the proposed changes to each device at the end of the playbook run.</p>
 <h3>Make a change and run the playbook.</h3>
-<p>We will modify the port profile for the example above. The user's access port should be moved to vlan 600 from vlan 267.</p>
+<p>We will modify the port profile for the example above. The user's access vlan will be moved to vlan 600 from vlan 267.</p>
 <div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">b185b52c-70b9-4949-b5a1-e0a8d4ab779c</span><span class="p p-Indicator">:</span>
   <span class="l l-Scalar l-Scalar-Plain">service_policies</span><span class="p p-Indicator">:</span>
   <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">direction</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">input</span>
@@ -192,9 +201,1216 @@
 
 <h3>Playbook results</h3>
 <p>The playbook takes some time to run as a total of 400+ interfaces exisit across both devices.</p>
-<p>```
-➜  /working ansible-playbook -i inventory.txt site.yml --check
-&lt;...&gt;</p>
+<div class="highlight"><pre><span></span><span class="err">➜</span>  <span class="o">/</span><span class="n">working</span> <span class="n">ansible</span><span class="o">-</span><span class="n">playbook</span> <span class="o">-</span><span class="n">i</span> <span class="n">inventory</span><span class="p">.</span><span class="n">txt</span> <span class="n">site</span><span class="p">.</span><span class="n">yml</span> <span class="o">--</span><span class="n">check</span>
+<span class="o">&lt;</span><span class="p">...</span><span class="o">&gt;</span>
+<span class="n">TASK</span> <span class="p">[</span><span class="nl">ansible_change_report</span> <span class="p">:</span> <span class="n">Show</span> <span class="n">config</span> <span class="n">changes</span> <span class="k">for</span> <span class="n">device</span><span class="p">]</span> <span class="o">******************</span>
+<span class="nl">ok</span><span class="p">:</span> <span class="p">[</span><span class="n">xe_int_sample_01</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="s">&quot;msg&quot;</span><span class="o">:</span> <span class="p">[</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/15&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/17&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/16&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/14&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/18&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/18&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/13&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/13&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/14&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/15&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/16&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/17&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/14&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/15&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/16&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/17&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/13&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/18&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+<span class="nl">ok</span><span class="p">:</span> <span class="p">[</span><span class="n">xe_int_sample_02</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="s">&quot;msg&quot;</span><span class="o">:</span> <span class="p">[</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/15&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/2&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/3&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/1&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/17&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/5&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/4&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/16&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/42&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/43&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/40&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/41&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/46&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/45&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/48&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/7&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/9&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/8&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/37&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/35&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/34&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/33&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/32&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/31&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/30&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/36&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/23&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/47&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/14&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/39&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/44&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/38&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/18&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/18&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/13&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/13&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/14&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/15&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/16&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/17&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet7/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/29&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/28&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/25&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/24&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/27&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/21&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/20&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/26&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/22&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/14&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/15&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/16&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/17&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/11&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/13&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/18&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet5/19&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet1/12&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet2/10&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span><span class="p">,</span>
+        <span class="s">&quot;*** ROLE: interface ***&quot;</span><span class="p">,</span>
+        <span class="s">&quot;interface GigabitEthernet6/6&quot;</span><span class="p">,</span>
+        <span class="s">&quot;switchport access vlan 600&quot;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">PLAY</span> <span class="n">RECAP</span> <span class="o">*********************************************************************</span>
+<span class="nl">xe_int_sample_01</span>           <span class="p">:</span> <span class="n">ok</span><span class="o">=</span><span class="mi">703</span>  <span class="n">changed</span><span class="o">=</span><span class="mi">198</span>  <span class="n">unreachable</span><span class="o">=</span><span class="mi">0</span>    <span class="n">failed</span><span class="o">=</span><span class="mi">0</span>
+<span class="nl">xe_int_sample_02</span>           <span class="p">:</span> <span class="n">ok</span><span class="o">=</span><span class="mi">703</span>  <span class="n">changed</span><span class="o">=</span><span class="mi">198</span>  <span class="n">unreachable</span><span class="o">=</span><span class="mi">0</span>    <span class="n">failed</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+
+
+<p>The port profile change would result in 400 interface changes across both devices.</p>
+<h3>Wrap up</h3>
+<p>If you have hundreds of devices in a facility that a share configuration, or simply want to track down common configuration data between devices this may be a useful approach. The same technique could be used for access-lists, qos configurations, or any subset of a network device configuration.</p>
+<p>By doing the comparison across the structured device data instead of the actual running configuration, common data can be identified between OSs, assuming a consistent data model is used.</p>
   </div>
 </article>
     </div>
