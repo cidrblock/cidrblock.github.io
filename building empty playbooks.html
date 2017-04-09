@@ -106,7 +106,7 @@
 <p>inventory: "Ansible works against multiple systems in your infrastructure at the same time. It does this by selecting portions of systems listed in Ansible’s inventory file."</p>
 </li>
 </ul>
-<p>Let's explore one way to disassemble the playbook into smaller peices, each having it's own version and git repository.  The playbook will assemble the necessary roles, plugins, inventory at runtime.</p>
+<p>Let's explore one way to disassemble the playbook into smaller pieces, each having it's own version and git repository.  The playbook will assemble the necessary roles, plugins, inventory at runtime.</p>
 <h3>Roles</h3>
 <p>Roles can be either added to Ansible galaxy or hosted on premise in an internal installation of git or github enterprise.</p>
 <p>The dependencies, the roles added to the playbook runtime can be referenced by adding each to a <code>requirements.yml</code> file:</p>
@@ -127,7 +127,7 @@
 <p>Note the specific tag for each.  This allows the compatible versions to be specified for the playbook.</p>
 <p>Running <code>ansible-galaxy install -r requirements.yml -p roles</code> would install the roles to the roles directory in the playbook.</p>
 <h3>Inventory</h3>
-<p>We currently use a combination of static and dynamic inventory files.  A subset of the inventory data needed can be harvested from our onsite monitoring tool REST API. The inventory can be kept in it's own git repository as well. The inventory can be versioned as well, but each version would need to be maintained with current data to avoid a massive roll-back.  Tackling this specific problem will need additional thought and process.</p>
+<p>We currently use a combination of static and dynamic inventory files.  A subset of the inventory data needed can be harvested from our on premise monitoring tool REST API. The inventory can be kept in it's own git repository as well. The inventory can be versioned as well, but each version would need to be maintained with current data to avoid a massive roll-back.  Tackling this specific problem will need additional thought and process.</p>
 <p>Collecting the inventory:</p>
 <div class="highlight"><pre><span></span>git clone -b 1.01 https://github.com/cidrblock/company_inventory inventory
 </pre></div>
@@ -149,7 +149,7 @@
 <p>Here's the new version of the playbook. https://github.com/cidrblock/example_empty_playbook</p>
 <ul>
 <li>
-<p>A <code>.gitignore</code> hase been added to prevent the inventory or roles from being checked in with the playbooks source.</p>
+<p>A <code>.gitignore</code> hase been added to prevent the inventory or roles from being checked in with the playbook's source.</p>
 </li>
 <li>
 <p>A <code>requirements.yml</code> file has been added and references the dependent roles, including the plugin role.</p>
