@@ -15,7 +15,7 @@
 &lt;p&gt;4) Generate a unique identifier for the newly identified profiles.&lt;/p&gt;
 &lt;p&gt;5) Modify the host_vars file for each device such that each interface inherits from a profile and retains the original name and description.&lt;/p&gt;
 &lt;p&gt;6) Write the profiles to the group_vars directly so they can be inherited by each device during the Ansible playbook run.&lt;/p&gt;
-&lt;h3&gt;Walk though&lt;/h3&gt;
+&lt;h3&gt;Walk through&lt;/h3&gt;
 &lt;p&gt;Review the configurations in the repository configurations directory.  A high degree of duplication can be seen in the interface configurations. For example:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;interface GigabitEthernet1/1
  switchport access vlan 267
