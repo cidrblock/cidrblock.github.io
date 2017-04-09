@@ -1,5 +1,173 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-04-08T16:24:59-07:00</updated><entry><title>Matching snowflakes</title><link href="https://cidrblock.github.io/Automatically%20discovering%20port%20profiles.html" rel="alternate"></link><published>2017-04-08T16:24:59-07:00</published><updated>2017-04-08T16:24:59-07:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-04-08:/Automatically discovering port profiles.html</id><summary type="html">&lt;p&gt;Programmatically finding port profiles across switches using netcopa, Ansible and python&lt;/p&gt;</summary><content type="html">&lt;h3&gt;The code&lt;/h3&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>network | automation - ansible</title><link href="https://cidrblock.github.io/" rel="alternate"></link><link href="https://cidrblock.github.io/feeds/ansible.atom.xml" rel="self"></link><id>https://cidrblock.github.io/</id><updated>2017-04-09T14:50:20-07:00</updated><entry><title>Ansible playbooks are better left empty</title><link href="https://cidrblock.github.io/building%20empty%20playbooks.html" rel="alternate"></link><published>2017-04-09T14:50:20-07:00</published><updated>2017-04-09T14:50:20-07:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-04-09:/building empty playbooks.html</id><summary type="html"></summary><content type="html">&lt;h3&gt;The problem&lt;/h3&gt;
+&lt;p&gt;As the use of Ansible to manage the network grows within our organization, the number of roles and complexity of the data is ever increasing. We need decrease the size of our Ansible playbooks in an effort to flatten the complexity curve to a manageable level.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Roles and templates become dependent on a specific data structure within the inventory.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The inventory is growing more complex as purpose built groups are added to target subsets of the fleet that share a common configuration.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The number of internal modules, lookup filters, and filter plugins is increasing as well.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The reusability of roles is increasing, time is wasted when two network engineers author the same role for different changes for use in different playbooks.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Acting like software developers&lt;/h3&gt;
+&lt;p&gt;Combining development versioning and release &lt;a href="http://nvie.com/posts/a-successful-git-branching-model/"&gt;practices&lt;/a&gt; with native Ansible functionality can provide some relief and lock the data model to the roles to the plugins to a specific version for compatibility.  A playbook should specifically reference the data, role, and plugin versions for a successful run.&lt;/p&gt;
+&lt;h3&gt;Build empty playbooks&lt;/h3&gt;
+&lt;p&gt;Take the following playbook as an example: https://github.com/cidrblock/identify_port_profiles_across_devices.  It is a complete standalone playbook.  The inventory, plugins, and roles are all contained within the repository.  There is a snake in the grass though, a classic mistake I suspect we have all made.  If the configuration of the network is defined across playbooks in separate inventory files, we have simply moved the distributed configuration from the network into git.&lt;/p&gt;
+&lt;p&gt;Looking across the enterprise network, configuration drift can be found as "standards" and software versions have changed.  Taking advantage of "a better way to do this" has come at a cost because the fleet has not always been updated to reflect the version and configuration of the latest install.&lt;/p&gt;
+&lt;p&gt;Roles will expect a particular data model, the data model will have "improved" and what was expected to be a simply change will involve hours of retrofitting roles and jinja templates. Technical debt will slowly chip away at the effeciencies automation bought us and reverting to CTRL-A, CTRL-C, ssh, CTRL-V will be the way to get it done fast. The current inconsistencies across the fleet will be moved from the devices into Ansible, git, the data, and code if playbooks aren't kept empty.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Yes, keep the Ansible playbooks empty.&lt;/strong&gt;&lt;/p&gt;
+&lt;h3&gt;The hierarchy of a playbook&lt;/h3&gt;
+&lt;p&gt;The major components of an playbook include:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;roles: "Roles in Ansible build on the idea of include files and combine them to form clean, reusable abstractions – they allow you to focus more on the big picture and only dive down into the details when needed."&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;plugins: "Plugins are pieces of code that augment Ansible’s core functionality. Ansible ships with a number of handy plugins, and you can easily write your own."&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;inventory: "Ansible works against multiple systems in your infrastructure at the same time. It does this by selecting portions of systems listed in Ansible’s inventory file."&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Let's explore one way to disassemble the playbook into smaller peices, each having it's own version and git repository.  The playbook will assemble the necessary roles, plugins, inventory at runtime.&lt;/p&gt;
+&lt;h3&gt;Roles&lt;/h3&gt;
+&lt;p&gt;Roles can be either added to Ansible galaxy or hosted on premise in an internal installation of git or github enterprise.&lt;/p&gt;
+&lt;p&gt;The dependencies, the roles added to the playbook runtime can be referenced by adding each to a &lt;code&gt;requirements.yml&lt;/code&gt; file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;- name: company_plugins
+  src: https://github.com/cidrblock/role_company_plugins
+  version: &amp;#39;1.01&amp;#39;
+
+- name: ansible_change_report
+  src: https://github.com/cidrblock/role_ansible_change_report
+  version: &amp;#39;1.01&amp;#39;
+
+- name: interface
+  src: https://github.com/cidrblock/role_interface
+  version: &amp;#39;1.01&amp;#39;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Note the specific tag for each.  This allows the compatible versions to be specified for the playbook.&lt;/p&gt;
+&lt;p&gt;Running &lt;code&gt;ansible-galaxy install -r requirements.yml -p roles&lt;/code&gt; would install the roles to the roles directory in the playbook.&lt;/p&gt;
+&lt;h3&gt;Inventory&lt;/h3&gt;
+&lt;p&gt;We currently use a combination of static and dynamic inventory files.  A subset of the inventory data needed can be harvested from our onsite monitoring tool REST API. The inventory can be kept in it's own git repository as well. The inventory can be versioned as well, but each version would need to be maintained with current data to avoid a massive roll-back.  Tackling this specific problem will need additional thought and process.&lt;/p&gt;
+&lt;p&gt;Collecting the inventory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;git clone -b 1.01 https://github.com/cidrblock/company_inventory inventory
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Plugins&lt;/h3&gt;
+&lt;p&gt;Rather than keeping plugins in the root of the Ansible playbook directory they can be contained within a role.  As long as the plugin role is run first, the plugins will be available to subsequent roles: &lt;a href="http://docs.ansible.com/ansible/playbooks_roles.html#embedding-modules-and-plugins-in-roles"&gt;reference&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;The lookup and filter plugins from the examples above have been moved into a role. https://github.com/cidrblock/role_company_plugins&lt;/p&gt;
+&lt;p&gt;And can be run as the first role:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;- hosts: demo_hosts
+  gather_facts: no
+  connection: local
+  roles:
+  - company_plugins
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Putting it all together&lt;/h3&gt;
+&lt;p&gt;Here's the new version of the playbook. https://github.com/cidrblock/example_empty_playbook&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;A &lt;code&gt;.gitignore&lt;/code&gt; hase been added to prevent the inventory or roles from being checked in with the playbooks source.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;A &lt;code&gt;requirements.yml&lt;/code&gt; file has been added and references the dependent roles, including the plugin role.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;For convenience, an &lt;code&gt;assemble.sh&lt;/code&gt; script which runs the clone and ansible-galaxy command, prompts to kick off the playbook run in check mode.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Roles, plugins, and inventory have been removed.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="ch"&gt;#! /bin/bash&lt;/span&gt;
+git clone -b 1.01 https://github.com/cidrblock/company_inventory inventory
+ansible-galaxy install -r requirements.yml -p roles
+ansible-playbook -i inventory site.yml --list-host
+ansible-playbook -i inventory site.yml --list-tasks
+&lt;span class="nb"&gt;read&lt;/span&gt; -p &lt;span class="s2"&gt;&amp;quot;Run playbook in check mode (y/n)?&amp;quot;&lt;/span&gt; choice
+&lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$choice&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; in
+  y&lt;span class="p"&gt;|&lt;/span&gt;Y &lt;span class="o"&gt;)&lt;/span&gt; ansible-playbook -i inventory site.yml --check&lt;span class="p"&gt;;;&lt;/span&gt;
+  n&lt;span class="p"&gt;|&lt;/span&gt;N &lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;exiting&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;;;&lt;/span&gt;
+  * &lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;invalid&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;;;&lt;/span&gt;
+&lt;span class="k"&gt;esac&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Not completely empty but close, we're down to three files.&lt;/p&gt;
+&lt;h3&gt;Sample run&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;➜  /working git:&lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; tree
+.
+├── assemble.sh
+├── requirements.yml
+└── site.yml
+
+&lt;span class="m"&gt;0&lt;/span&gt; directories, &lt;span class="m"&gt;3&lt;/span&gt; files
+➜  /working git:&lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt; ./assemble.sh
+Cloning into &lt;span class="s1"&gt;&amp;#39;inventory&amp;#39;&lt;/span&gt;...
+remote: Counting objects: 15, &lt;span class="k"&gt;done&lt;/span&gt;.
+remote: Compressing objects: 100% &lt;span class="o"&gt;(&lt;/span&gt;8/8&lt;span class="o"&gt;)&lt;/span&gt;, &lt;span class="k"&gt;done&lt;/span&gt;.
+remote: Total &lt;span class="m"&gt;15&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;delta 3&lt;span class="o"&gt;)&lt;/span&gt;, reused &lt;span class="m"&gt;15&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;delta 3&lt;span class="o"&gt;)&lt;/span&gt;, pack-reused 0
+Unpacking objects: 100% &lt;span class="o"&gt;(&lt;/span&gt;15/15&lt;span class="o"&gt;)&lt;/span&gt;, &lt;span class="k"&gt;done&lt;/span&gt;.
+Note: checking out &lt;span class="s1"&gt;&amp;#39;12aa4b507f2ef236077073347073d92ab116b0b1&amp;#39;&lt;/span&gt;.
+
+You are in &lt;span class="s1"&gt;&amp;#39;detached HEAD&amp;#39;&lt;/span&gt; state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
+
+If you want to create a new branch to retain commits you create, you may
+&lt;span class="k"&gt;do&lt;/span&gt; so &lt;span class="o"&gt;(&lt;/span&gt;now or later&lt;span class="o"&gt;)&lt;/span&gt; by using -b with the checkout &lt;span class="nb"&gt;command&lt;/span&gt; again. Example:
+
+  git checkout -b &amp;lt;new-branch-name&amp;gt;
+
+- extracting company_plugins to roles/company_plugins
+- company_plugins was installed successfully
+- extracting ansible_change_report to roles/ansible_change_report
+- ansible_change_report was installed successfully
+- extracting interface to roles/interface
+- interface was installed successfully
+
+playbook: site.yml
+
+  play &lt;span class="c1"&gt;#1 (demo_hosts): demo_hosts  TAGS: []&lt;/span&gt;
+    pattern: &lt;span class="o"&gt;[&lt;/span&gt;u&lt;span class="s1"&gt;&amp;#39;demo_hosts&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;]&lt;/span&gt;
+    hosts &lt;span class="o"&gt;(&lt;/span&gt;2&lt;span class="o"&gt;)&lt;/span&gt;:
+      xe_int_sample_02
+      xe_int_sample_01
+
+playbook: site.yml
+
+  play &lt;span class="c1"&gt;#1 (demo_hosts): demo_hosts  TAGS: []&lt;/span&gt;
+    tasks:
+      set_fact  TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      interface : Update the interface with their parents   TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      interface : Include OS files &lt;span class="k"&gt;for&lt;/span&gt; interfaces   TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+      ansible_change_report : Show config changes &lt;span class="k"&gt;for&lt;/span&gt; device    TAGS: &lt;span class="o"&gt;[]&lt;/span&gt;
+Run playbook in check mode &lt;span class="o"&gt;(&lt;/span&gt;y/n&lt;span class="o"&gt;)&lt;/span&gt;?y
+
+PLAY &lt;span class="o"&gt;[&lt;/span&gt;demo_hosts&lt;span class="o"&gt;]&lt;/span&gt; **************************************************************
+&amp;lt;...&amp;gt;
+PLAY RECAP *********************************************************************
+xe_int_sample_01           : &lt;span class="nv"&gt;ok&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;504&lt;/span&gt;  &lt;span class="nv"&gt;changed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;    &lt;span class="nv"&gt;unreachable&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;    &lt;span class="nv"&gt;failed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;0
+xe_int_sample_02           : &lt;span class="nv"&gt;ok&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;504&lt;/span&gt;  &lt;span class="nv"&gt;changed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;    &lt;span class="nv"&gt;unreachable&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;    &lt;span class="nv"&gt;failed&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;0
+
+➜  /working git:&lt;span class="o"&gt;(&lt;/span&gt;master&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Wrap up&lt;/h3&gt;
+&lt;p&gt;We are network engineers striving and learning to become software developers in an effort to eliminate the toil. As our understanding of what it means to automate every aspect of the network matures so will our code revision and control processes. Thankfully many others have already traveled this path and are far ahead of us.  Needing to start someplace to avoid the pitfalls in our history, this seems reasonable.  &lt;/p&gt;
+&lt;p&gt;I'm open to suggestions.&lt;/p&gt;</content><category term="ansible"></category><category term="netdevops"></category></entry><entry><title>Matching snowflakes</title><link href="https://cidrblock.github.io/Automatically%20discovering%20port%20profiles.html" rel="alternate"></link><published>2017-04-08T16:24:59-07:00</published><updated>2017-04-08T16:24:59-07:00</updated><author><name>Bradley A. Thornton</name></author><id>tag:cidrblock.github.io,2017-04-08:/Automatically discovering port profiles.html</id><summary type="html">&lt;p&gt;Programmatically finding port profiles across switches using netcopa, Ansible and python&lt;/p&gt;</summary><content type="html">&lt;h3&gt;The code&lt;/h3&gt;
 &lt;p&gt;The associated repository and Ansible playbook can be found here:&lt;/p&gt;
 &lt;p&gt;https://github.com/cidrblock/identify_port_profiles_across_devices&lt;/p&gt;
 &lt;h3&gt;Introduction&lt;/h3&gt;
